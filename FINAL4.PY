@@ -4,7 +4,7 @@ import urllib3
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone  # 添加时区转换所需的模块
 import chardet
 import sys
 from PyQt5.QtWidgets import (
@@ -54,7 +54,7 @@ CHAMPION_MAP = {
 23: "泰达米尔", 4: "卡牌大师", 29: "抽搐", 77: "乌迪尔", 6: "乌戈特",
 110: "瓦鲁斯", 67: "瓦恩", 45: "维加尔", 161: "维尔科兹", 711: "维克斯",
 254: "Vi", 234: "Viego", 112: "Viktor", 8: "吸血鬼", 106: "Volibear",
-19: "沃里克", 498: "沙亚", 101: "泽拉斯", 5: "辛昭", 157: "亚索",
+19: "沃里克", 498: "沙亚", 101: "泽拉斯", 5: "赵信", 157: "亚索",
 777: "永恩", 83: "Yorick", 350: "悠米", 154: "扎克", 238: "劫",
 221: "泽里", 115: "吉格斯", 26: "齐莱恩", 142: "佐伊", 143: "捫拉"
 }
@@ -445,7 +445,22 @@ class LOLMatchHistoryApp(QMainWindow):
                 result_text += f"<hr><h3>比赛 #{i}</h3>"
                 result_text += f"<p><b>模式:</b> {game.get('gameMode', '未知模式')}</p>"
                 result_text += f"<p><b>类型:</b> {game.get('gameType', '未知类型')}</p>"
-                result_text += f"<p><b>开始时间:</b> {game.get('gameCreationDate', '未知时间')}</p>"
+                
+                # 转换时间为UTC+8北京时间
+                raw_date = game.get('gameCreationDate', '')
+                if raw_date:
+                    try:
+                        # 解析ISO格式时间 (UTC时间)
+                        utc_time = datetime.fromisoformat(raw_date.replace('Z', '+00:00'))
+                        # 转换为UTC+8北京时间
+                        beijing_time = utc_time.astimezone(timezone(timedelta(hours=8)))
+                        display_time = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
+                    except:
+                        display_time = "时间解析错误"
+                else:
+                    display_time = "未知时间"
+                    
+                result_text += f"<p><b>开始时间:</b> {display_time} </p>"
                 
                 duration = game.get('gameDuration', 0)
                 minutes, seconds = divmod(duration, 60)
