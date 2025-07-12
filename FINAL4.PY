@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QIcon, QTextDocument, QTextImageFormat, QTextCursor
 from PyQt5.QtGui import QDesktopServices
+import tempfile
 
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -24,40 +25,21 @@ LOG_DIR = r"D:\WeGameApps\英雄联盟\LeagueClient"
 
 # 英雄ID到名称的映射
 CHAMPION_MAP = {
-266: "亚托克斯", 103: "阿狸", 84: "阿卡丽", 166: "影哨", 12: "阿利斯塔",
-799: "安贝萨", 32: "阿木木", 34: "冰鸟", 1: "安妮", 523: "吴亦凡",
-22: "艾希", 136: "龙王", 893: "极光", 268: "阿兹尔", 432: "吟游诗人",
-200: "Bel'Veth", 53: "Blitzcrank", 63: "品牌", 201: "Braum", 233: "Briar",
-51: "凯特琳", 164: "卡米尔", 69: "仙后座", 31: "乔加斯", 42: "柯基",
-122: "大流士", 131: "戴安娜", 119: "德拉文", 36: "蒙多博士", 245: "艾克",
-60: "Elise", 28: "Evelynn", 81: "Ezreal", 9: "Fiddlesticks", 114: "剑姬",
-105: "菲兹", 3: "加里奥", 41: "跳板", 86: "加伦", 150: "格纳",
-79: "格拉加斯", 104: "格雷夫斯", 887: "格温", 120: "赫卡里姆", 74: "海默丁格",
-910: "Hwei", 420: "Illaoi", 39: "Irelia", 427: "Ivern", 40: "Janna",
-59: "贾万四世", 24: "贾克斯", 126: "杰斯", 202: "烬", 222: "金克斯",
-145: "卡莎", 429: "Kalista", 43: "Karma", 30: "Karthus", 38: "卡萨丁",
-55: "凯瑟琳", 10: "凯尔", 141: "凯恩", 85: "凯南", 121: "卡齐克斯",
-203: "Kindred", 240: "Kled", 96: "Kog'Maw", 897: "K'Sante", 7: "LeBlanc",
-64: "李·桑", 89: "莱昂娜", 876: "莉莉亚", 127: "丽珊德拉", 236: "卢锡安",
-117: "露露", 99: "勒克斯", 54: "马尔菲特", 90: "马尔扎哈", 57: "毛凯",
-11: "易大师", 800: "梅尔", 902: "米利奥", 21: "幸运小姐", 62: "悟空",
-82: "铁铠冥魂", 25: "莫甘娜", 950: "纳菲里", 267: "娜美", 75: "内苏斯",
-111: "鹦鹉螺", 518: "Neeko", 76: "Nidalee", 895: "Nilah", 56: "夜曲",
-20: "努努&威伦普", 2: "奥拉夫", 61: "奥莉安娜", 516: "山羊", 80: "万神殿",
-78: "罂粟", 555: "派克", 246: "奇亚娜", 133: "奎因", 497: "罗坎",
-33: "披头鲸", 421: "Rek'Sai", 526: "Rell", 888: "Renata Glasc", 58: "Renekton",
-107: "Rengar", 92: "Riven", 68: "Rumble", 13: "Ryze", 360: "Samira",
-113: "瑟庄妮", 235: "番泻叶", 147: "塞拉芬", 875: "塞特", 35: "沙科",
-98: "Shen", 102: "Shyvana", 27: "Singed", 14: "Zion", 15: "Sivir",
-72: "斯卡纳", 901: "暗焰", 37: "索娜", 16: "索拉卡", 50: "斯温",
-517: "Sylas", 134: "Syndra", 223: "Tahm Kench", 163: "Taliyah", 91: "泰隆",
-44: "塔里克", 17: "Teemo", 412: "Thresh", 18: "Tristana", 48: "Trundle",
-23: "泰达米尔", 4: "卡牌大师", 29: "抽搐", 77: "乌迪尔", 6: "乌戈特",
-110: "瓦鲁斯", 67: "瓦恩", 45: "维加尔", 161: "维尔科兹", 711: "维克斯",
-254: "Vi", 234: "Viego", 112: "Viktor", 8: "吸血鬼", 106: "Volibear",
-19: "沃里克", 498: "沙亚", 101: "泽拉斯", 5: "赵信", 157: "亚索",
-777: "永恩", 83: "Yorick", 350: "悠米", 154: "扎克", 238: "劫",
-221: "泽里", 115: "吉格斯", 26: "齐莱恩", 142: "佐伊", 143: "捫拉"
+266: "Aatrox",103: "Ahri",84: "Akali",166: "Akshan",12: "Alistar",799: "Ambessa",32: "Amumu",34: "Anivia",1: "Annie",523: "Aphelios",22: "Ashe",136: "Aurelion Sol",893: "Aurora",
+268: "Azir",432: "Bard",200: "Bel'Veth",53: "Blitzcrank",63: "Brand",201: "Braum",233: "Briar",51: "Caitlyn",164: "Camille",69: "Cassiopeia",31: "Cho'Gath",
+42: "Corki",122: "Darius",131: "Diana",119: "Draven",36: "Dr. Mundo",245: "Ekko",60: "Elise",28: "Evelynn",81: "Ezreal",9: "Fiddlesticks",114: "Fiora",
+105: "Fizz",3: "Galio",41: "Gangplank",86: "Garen",150: "Gnar",79: "Gragas",104: "Graves",887: "Gwen",120: "Hecarim",74: "Heimerdinger",910: "Hwei",420: "Illaoi",
+39: "Irelia",427: "Ivern",40: "Janna",59: "Jarvan IV",24: "Jax",126: "Jayce",202: "Jhin",222: "Jinx",145: "Kai'Sa",429: "Kalista",43: "Karma",30: "Karthus",
+38: "Kassadin",55: "Katarina",10: "Kayle",141: "Kayn",85: "Kennen",121: "Kha'Zix",203: "Kindred",240: "Kled",96: "Kog'Maw",897: "K'Sante",7: "LeBlanc",
+64: "Lee Sin",89: "Leona",876: "Lillia",127: "Lissandra",236: "Lucian",117: "Lulu",99: "Lux",54: "Malphite",90: "Malzahar",57: "Maokai",11: "Master Yi",
+800: "Mel",902: "Milio",21: "MissFortune",62: "Wukong",82: "Mordekaiser",25: "Morgana",950: "Naafiri",267: "Nami",75: "Nasus",111: "Nautilus",518: "Neeko",
+76: "Nidalee",895: "Nilah",56: "Nocturne",20: "Nunu & Willump",2: "Olaf",61: "Orianna",516: "Ornn",80: "Pantheon",78: "Poppy",555: "Pyke",246: "Qiyana",133: "Quinn",497: "Rakan",33: "Rammus",
+421: "Rek'Sai",526: "Rell",888: "Renata Glasc",58: "Renekton",107: "Rengar",92: "Riven",68: "Rumble",13: "Ryze",360: "Samira",113: "Sejuani",235: "Senna",147: "Seraphine",
+875: "Sett",35: "Shaco",98: "Shen",102: "Shyvana",27: "Singed",14: "Sion",15: "Sivir",72: "Skarner",901: "Smolder",37: "Sona",16: "Soraka",50: "Swain",517: "Sylas",
+134: "Syndra",223: "Tahm Kench",163: "Taliyah",91: "Talon",44: "Taric",17: "Teemo",412: "Thresh",18: "Tristana",48: "Trundle",23: "Tryndamere",
+4: "Twisted Fate",29: "Twitch",77: "Udyr",6: "Urgot",110: "Varus",67: "Vayne",45: "Veigar",161: "Vel'Koz",711: "Vex",254: "Vi",234: "Viego",112: "Viktor",
+8: "Vladimir",106: "Volibear",19: "Warwick",498: "Xayah",101: "Xerath",5: "XinZhao",157: "Yasuo",777: "Yone",83: "Yorick",350: "Yuumi",154: "Zac",238: "Zed",
+221: "Zeri",115: "Ziggs",26: "Zilean",142: "Zoe",143: "Zyra"
 }
 
 # 段位映射表（简化版）
@@ -147,12 +129,40 @@ class WorkerThread(QThread):
             return None
 
 
+class ImageDownloaderThread(QThread):
+    finished = pyqtSignal(dict)
+
+    def __init__(self, champion_names, parent=None):
+        super().__init__(parent)
+        self.champion_names = champion_names  # set of champion English names
+        self.result = {}  # {champion_en: local_path}
+
+    def run(self):
+        import requests, tempfile, os
+        for champion_en in self.champion_names:
+            # Data Dragon CDN URL
+            url = f"https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/{champion_en}.png"
+            try:
+                temp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                response = requests.get(url, stream=True, timeout=10)
+                if response.status_code == 200:
+                    with open(temp.name, 'wb') as f:
+                        f.write(response.content)
+                    self.result[champion_en] = temp.name
+                else:
+                    self.result[champion_en] = url  # fallback to network url
+            except Exception:
+                self.result[champion_en] = url
+        self.finished.emit(self.result)
+
+
 class LOLMatchHistoryApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.auth_token = None
         self.app_port = None
         self.summoner_name = ""
+        self.temp_files = []  # 存储临时图片路径
         self.init_ui()
         self.autodetect_params()
         
@@ -434,108 +444,136 @@ class LOLMatchHistoryApp(QMainWindow):
         self.progress_bar.setValue(value)
         self.progress_label.setText(message)
         
+    def download_image(self, url):
+        """下载图片到临时文件，返回本地路径"""
+        try:
+            temp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+            self.temp_files.append(temp.name)
+            response = requests.get(url, stream=True)
+            if response.status_code == 200:
+                with open(temp.name, 'wb') as f:
+                    f.write(response.content)
+                return temp.name
+            return None
+        except Exception as e:
+            print(f"下载图片出错: {e}")
+            return None
+
+    def closeEvent(self, event):
+        for temp_file in self.temp_files:
+            try:
+                if os.path.exists(temp_file):
+                    os.unlink(temp_file)
+            except Exception as e:
+                print(f"删除临时文件出错: {e}")
+        event.accept()
+
+
     def display_result(self, match_history, puuid):
-        """显示结果"""
+        """显示结果（异步图片下载）"""
         self.match_history = match_history
         self.puuid = puuid
         self.save_btn.setEnabled(True)
-        
-        # 提取最近的5场比赛
-        games = match_history.get('games', {}).get('games', [])[:5]
+
+        games = match_history.get('games', {}).get('games', [])[:20]
         total_count = match_history.get('totalCount', 0)
-        
-        # 构建结果文本
+
+        # 收集所有用到的champion_en
+        champion_names = set()
+        for game in games:
+            for participant in game.get('participants', []):
+                champion_id = participant.get('championId')
+                champion_en = CHAMPION_MAP.get(champion_id, f"Unknown_{champion_id}")
+                champion_names.add(champion_en)
+                break
+
+        # 先用网络图片URL生成HTML
+        self._champion_names_for_img = champion_names
+        self._games_for_img = games
+        self._result_html_args = (games, total_count)
+        self._img_local_map = None
+        self._refresh_result_html(img_map=None)
+
+        # 启动图片下载线程
+        self.img_thread = ImageDownloaderThread(champion_names)
+        self.img_thread.finished.connect(self._on_img_downloaded)
+        self.img_thread.start()
+
+    def _on_img_downloaded(self, img_map):
+        # 保存临时文件用于后续清理
+        for path in img_map.values():
+            if path.startswith("/") or path.startswith("C:") or path.startswith("D:") or path.startswith("E:"):
+                if os.path.exists(path):
+                    self.temp_files.append(path)
+        self._img_local_map = img_map
+        self._refresh_result_html(img_map=img_map)
+
+    def _refresh_result_html(self, img_map=None):
+        # 生成HTML，img_map为{champion_en: local_path or url}
+        games, total_count = self._games_for_img, self._result_html_args[1]
         result_text = f"<h2>比赛记录 - {self.summoner_name}</h2>"
-        
         if total_count >= 0:
-            # 计算最近5场比赛的统计数据
-            total_kills = 0
-            total_deaths = 0
-            total_assists = 0
-            wins = 0
-            losses = 0
-            
+            total_kills = total_deaths = total_assists = wins = losses = 0
             for game in games:
-                # 查找当前玩家的数据
                 for participant in game.get('participants', []):
-                    
-                        stats = participant.get('stats', {})
-                        total_kills += stats.get('kills', 0)
-                        total_deaths += stats.get('deaths', 0)
-                        total_assists += stats.get('assists', 0)
-                        
-                        if stats.get('win', False):
-                            wins += 1
-                        else:
-                            losses += 1
-                        break
-            
-            # 计算平均KDA
+                    stats = participant.get('stats', {})
+                    total_kills += stats.get('kills', 0)
+                    total_deaths += stats.get('deaths', 0)
+                    total_assists += stats.get('assists', 0)
+                    if stats.get('win', False):
+                        wins += 1
+                    else:
+                        losses += 1
+                    break
             avg_kills = total_kills / len(games) if games else 0
             avg_deaths = total_deaths / len(games) if games else 0
             avg_assists = total_assists / len(games) if games else 0
             avg_kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else 0
-
-            # 计算段位（这里使用简化逻辑，实际应用中需要从API获取）
-            # 基于胜率计算段位
             win_rate = wins / len(games) * 100 if games else 0
-            rank_level = min(8, max(0, int(win_rate / 12.5)))  # 0-8对应不同段位
-            
-            # 添加统计信息到结果开头
+            rank_level = min(8, max(0, int(win_rate / 12.5)))
             result_text += f"<div style='background-color:#f0f8ff; padding:10px; border-radius:5px; margin-bottom:15px;'>"
-            result_text += f"<h3>最近5场比赛统计</h3>"
+            result_text += f"<h3>最近20场比赛统计</h3>"
             result_text += f"<p><b>胜率:</b> {wins}胜{losses}负 ({win_rate:.1f}%)</p>"
             result_text += f"<p><b>平均KDA:</b> {avg_kda:.1f}</p>"
             result_text += f"<p><b>段位评估:</b> {RANK_MAP.get(rank_level, '未知')} ({rank_level}级)</p>"
             result_text += "</div>"
-            
             result_text += f"<p><b>最近5场比赛详情:</b></p>"
-            
             for i, game in enumerate(games, 1):
                 result_text += f"<hr><h3>比赛 #{i}</h3>"
                 result_text += f"<p><b>模式:</b> {game.get('gameMode', '未知模式')}</p>"
                 result_text += f"<p><b>类型:</b> {game.get('gameType', '未知类型')}</p>"
-                
-                # 转换时间为UTC+8北京时间
                 raw_date = game.get('gameCreationDate', '')
                 if raw_date:
                     try:
-                        # 解析ISO格式时间 (UTC时间)
                         utc_time = datetime.fromisoformat(raw_date.replace('Z', '+00:00'))
-                        # 转换为UTC+8北京时间
                         beijing_time = utc_time.astimezone(timezone(timedelta(hours=8)))
                         display_time = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
                     except:
                         display_time = "时间解析错误"
                 else:
                     display_time = "未知时间"
-                    
                 result_text += f"<p><b>开始时间:</b> {display_time} </p>"
-                
                 duration = game.get('gameDuration', 0)
                 minutes, seconds = divmod(duration, 60)
                 result_text += f"<p><b>持续时间:</b> {minutes}分{seconds}秒</p>"
-                
-                # 查找玩家数据
                 for participant in game.get('participants', []):
-                    
-                        # 将英雄ID转换为名称
-                        champion_id = participant.get('championId')
-                        champion_name = CHAMPION_MAP.get(champion_id, f"未知英雄 ({champion_id})")
-                        
-                        stats = participant.get('stats', {})
-                        
-                        # 添加英雄头像
-                        champion_image_url = f"https://lolcdn.darkintaqt.com/cdn/champion/{champion_id}/tile"
-                        result_text += f"<p><b>英雄:</b> <a href='{champion_image_url}'><img src='{champion_image_url}' width='40' height='40' style='vertical-align:middle;'></a> {champion_name}</p>"
-                        
-                        result_text += f"<p><b>KDA:</b> {stats.get('kills', 0)}/{stats.get('deaths', 0)}/{stats.get('assists', 0)}</p>"
-                        win_color = "green" if stats.get('win', False) else "red"
-                        result_text += f"<p><b>结果:</b> <span style='color:{win_color};font-weight:bold;'>"
-                        result_text += "胜利" if stats.get('win', False) else "失败"
-                        result_text += "</span></p>"
-                        break
-        
+                    champion_id = participant.get('championId')
+                    champion_en = CHAMPION_MAP.get(champion_id, f"Unknown_{champion_id}")
+                    stats = participant.get('stats', {})
+                    # 图片URL
+                    if img_map and champion_en in img_map:
+                        img_src = img_map[champion_en]
+                        if os.path.exists(img_src):
+                            img_src = 'file:///' + img_src.replace('\\', '/')
+                    else:
+                        img_src = f"https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/{champion_en}.png"
+                    result_text += f"<p><b>英雄:</b> <img src='{img_src}' width='48' height='48' style='vertical-align:middle;margin-right:8px;'> {champion_en}</p>"
+                    result_text += f"<p><b>KDA:</b> {stats.get('kills', 0)}/{stats.get('deaths', 0)}/{stats.get('assists', 0)}</p>"
+                    win_color = "green" if stats.get('win', False) else "red"
+                    result_text += f"<p><b>结果:</b> <span style='color:{win_color};font-weight:bold;'>"
+                    result_text += "胜利" if stats.get('win', False) else "失败"
+                    result_text += "</span></p>"
+                    break
         self.result_display.setHtml(result_text)
         self.status_bar.showMessage("数据获取完成")
         
