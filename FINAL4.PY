@@ -4,16 +4,17 @@ import urllib3
 import json
 import os
 import re
-from datetime import datetime, timedelta, timezone  # 添加时区转换所需的模块
+from datetime import datetime, timedelta, timezone
 import chardet
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QLineEdit, QPushButton, QTextEdit, QGroupBox,
-    QStatusBar, QProgressBar, QMessageBox, QFileDialog
+    QStatusBar, QProgressBar, QMessageBox, QFileDialog,QTextBrowser
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QFont, QIcon
+from PyQt5.QtGui import QFont, QIcon, QTextDocument, QTextImageFormat, QTextCursor
+from PyQt5.QtGui import QDesktopServices
 
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -33,7 +34,7 @@ CHAMPION_MAP = {
 105: "菲兹", 3: "加里奥", 41: "跳板", 86: "加伦", 150: "格纳",
 79: "格拉加斯", 104: "格雷夫斯", 887: "格温", 120: "赫卡里姆", 74: "海默丁格",
 910: "Hwei", 420: "Illaoi", 39: "Irelia", 427: "Ivern", 40: "Janna",
-59: "贾万四世", 24: "贾克斯", 126: "杰斯", 202: "Jhin", 222: "金克斯",
+59: "贾万四世", 24: "贾克斯", 126: "杰斯", 202: "烬", 222: "金克斯",
 145: "卡莎", 429: "Kalista", 43: "Karma", 30: "Karthus", 38: "卡萨丁",
 55: "凯瑟琳", 10: "凯尔", 141: "凯恩", 85: "凯南", 121: "卡齐克斯",
 203: "Kindred", 240: "Kled", 96: "Kog'Maw", 897: "K'Sante", 7: "LeBlanc",
@@ -57,6 +58,12 @@ CHAMPION_MAP = {
 19: "沃里克", 498: "沙亚", 101: "泽拉斯", 5: "赵信", 157: "亚索",
 777: "永恩", 83: "Yorick", 350: "悠米", 154: "扎克", 238: "劫",
 221: "泽里", 115: "吉格斯", 26: "齐莱恩", 142: "佐伊", 143: "捫拉"
+}
+
+# 段位映射表（简化版）
+RANK_MAP = {
+    0: "黑铁", 1: "青铜", 2: "白银", 3: "黄金", 
+    4: "铂金", 5: "钻石", 6: "大师", 7: "宗师", 8: "王者"
 }
 
 class WorkerThread(QThread):
@@ -270,9 +277,11 @@ class LOLMatchHistoryApp(QMainWindow):
         result_group = QGroupBox("比赛记录")
         result_layout = QVBoxLayout()
         
-        self.result_display = QTextEdit()
+        self.result_display = QTextBrowser()
         self.result_display.setReadOnly(True)
         self.result_display.setStyleSheet("background-color: #f8f9fa;")
+        self.result_display.setOpenLinks(False)  # 禁用链接自动打开
+        self.result_display.anchorClicked.connect(self.open_champion_url)  # 处理图片点击事件
         result_layout.addWidget(self.result_display)
         
         result_group.setLayout(result_layout)
@@ -439,7 +448,48 @@ class LOLMatchHistoryApp(QMainWindow):
         result_text = f"<h2>比赛记录 - {self.summoner_name}</h2>"
         
         if total_count >= 0:
-            result_text += f"<p><b>最近5场比赛:</b></p>"
+            # 计算最近5场比赛的统计数据
+            total_kills = 0
+            total_deaths = 0
+            total_assists = 0
+            wins = 0
+            losses = 0
+            
+            for game in games:
+                # 查找当前玩家的数据
+                for participant in game.get('participants', []):
+                    
+                        stats = participant.get('stats', {})
+                        total_kills += stats.get('kills', 0)
+                        total_deaths += stats.get('deaths', 0)
+                        total_assists += stats.get('assists', 0)
+                        
+                        if stats.get('win', False):
+                            wins += 1
+                        else:
+                            losses += 1
+                        break
+            
+            # 计算平均KDA
+            avg_kills = total_kills / len(games) if games else 0
+            avg_deaths = total_deaths / len(games) if games else 0
+            avg_assists = total_assists / len(games) if games else 0
+            avg_kda = (total_kills + total_assists) / total_deaths if total_deaths > 0 else 0
+
+            # 计算段位（这里使用简化逻辑，实际应用中需要从API获取）
+            # 基于胜率计算段位
+            win_rate = wins / len(games) * 100 if games else 0
+            rank_level = min(8, max(0, int(win_rate / 12.5)))  # 0-8对应不同段位
+            
+            # 添加统计信息到结果开头
+            result_text += f"<div style='background-color:#f0f8ff; padding:10px; border-radius:5px; margin-bottom:15px;'>"
+            result_text += f"<h3>最近5场比赛统计</h3>"
+            result_text += f"<p><b>胜率:</b> {wins}胜{losses}负 ({win_rate:.1f}%)</p>"
+            result_text += f"<p><b>平均KDA:</b> {avg_kda:.1f}</p>"
+            result_text += f"<p><b>段位评估:</b> {RANK_MAP.get(rank_level, '未知')} ({rank_level}级)</p>"
+            result_text += "</div>"
+            
+            result_text += f"<p><b>最近5场比赛详情:</b></p>"
             
             for i, game in enumerate(games, 1):
                 result_text += f"<hr><h3>比赛 #{i}</h3>"
@@ -468,21 +518,30 @@ class LOLMatchHistoryApp(QMainWindow):
                 
                 # 查找玩家数据
                 for participant in game.get('participants', []):
-                    # 将英雄ID转换为名称
-                    champion_id = participant.get('championId')
-                    champion_name = CHAMPION_MAP.get(champion_id, f"未知英雄 ({champion_id})")
                     
-                    stats = participant.get('stats', {})
-                    result_text += f"<p><b>英雄:</b> {champion_name}</p>"
-                    result_text += f"<p><b>KDA:</b> {stats.get('kills', 0)}/{stats.get('deaths', 0)}/{stats.get('assists', 0)}</p>"
-                    win_color = "green" if stats.get('win', False) else "red"
-                    result_text += f"<p><b>结果:</b> <span style='color:{win_color};font-weight:bold;'>"
-                    result_text += "胜利" if stats.get('win', False) else "失败"
-                    result_text += "</span></p>"
-                    break
+                        # 将英雄ID转换为名称
+                        champion_id = participant.get('championId')
+                        champion_name = CHAMPION_MAP.get(champion_id, f"未知英雄 ({champion_id})")
+                        
+                        stats = participant.get('stats', {})
+                        
+                        # 添加英雄头像
+                        champion_image_url = f"https://lolcdn.darkintaqt.com/cdn/champion/{champion_id}/tile"
+                        result_text += f"<p><b>英雄:</b> <a href='{champion_image_url}'><img src='{champion_image_url}' width='40' height='40' style='vertical-align:middle;'></a> {champion_name}</p>"
+                        
+                        result_text += f"<p><b>KDA:</b> {stats.get('kills', 0)}/{stats.get('deaths', 0)}/{stats.get('assists', 0)}</p>"
+                        win_color = "green" if stats.get('win', False) else "red"
+                        result_text += f"<p><b>结果:</b> <span style='color:{win_color};font-weight:bold;'>"
+                        result_text += "胜利" if stats.get('win', False) else "失败"
+                        result_text += "</span></p>"
+                        break
         
         self.result_display.setHtml(result_text)
         self.status_bar.showMessage("数据获取完成")
+        
+    def open_champion_url(self, url):
+        """打开英雄详情页面"""
+        QDesktopServices.openUrl(url)
         
     def show_error(self, message):
         """显示错误信息"""
