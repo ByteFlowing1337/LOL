@@ -264,7 +264,7 @@ class AutoAcceptThread(QThread):
                             
                     elif current_phase == "ChampSelect" and not self.processed_session:
                         # 进入英雄选择，获取队友信息
-                        session_url = f"https://riot:{self.auth_token}@127.0.0.1:{self.app_port}/lol-lobby-team-builder/champ-select/v1/session"
+                        session_url = f"https://riot:{self.auth_token}@127.0.0.1:{self.app_port}/lol-champ-select/v1/session"
                         session_response = requests.get(
                             session_url,
                             verify=False,
@@ -468,11 +468,23 @@ class LOLMatchHistoryApp(QMainWindow):
         self.hero_combo.addItems(sorted(CHAMPION_ZH_TO_ID.keys()))  # 按中文名排序
         hero_select_layout.addWidget(self.hero_combo)
         
-        # 选择英雄按钮
-        self.select_hero_btn = QPushButton("确认选择")
-        self.select_hero_btn.setStyleSheet("background-color: #9370DB; color: white;")
+        # 选择英雄按钮（改为开关）
+        self.auto_select_btn = QPushButton("自动选择英雄")
+        self.auto_select_btn.setCheckable(True)
+        self.auto_select_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #9370DB;
+                color: white;
+            }
+            QPushButton:checked {
+                background-color: #28a745;
+            }
+        """)
+        hero_select_layout.addWidget(self.auto_select_btn)
+        # 保留手动选择按钮
+        self.select_hero_btn = QPushButton("手动选择")
+        self.select_hero_btn.setStyleSheet("background-color: #1e90ff; color: white;")
         self.select_hero_btn.clicked.connect(self.select_champion)
-        hero_select_layout.addWidget(self.select_hero_btn)
         
         # 在按钮布局中添加自动接受对局的开关
         self.auto_accept_btn = QPushButton("自动接受对局")
@@ -576,17 +588,14 @@ class LOLMatchHistoryApp(QMainWindow):
         if not self.auth_token or not self.app_port:
             QMessageBox.warning(self, "错误", "请先获取认证令牌和端口")
             return
-            
         # 获取用户选择的中文英雄名
         selected_hero_zh = self.hero_combo.currentText()
         champion_id = CHAMPION_ZH_TO_ID.get(selected_hero_zh)
-        
         if not champion_id:
             QMessageBox.warning(self, "错误", f"未找到英雄: {selected_hero_zh}")
             return
-            
         # 获取当前用户所在的行动ID
-        session_url = f"https://riot:{self.auth_token}@127.0.0.1:{self.app_port}/lol-lobby-team-builder/champ-select/v1/session"
+        session_url = f"https://riot:{self.auth_token}@127.0.0.1:{self.app_port}/lol-champ-select/v1/session"
         try:
             session_response = requests.get(
                 session_url,
@@ -594,16 +603,32 @@ class LOLMatchHistoryApp(QMainWindow):
                 verify=False,
                 timeout=5
             )
-            
             if session_response.status_code == 200:
                 session_data = session_response.json()
                 action_id = self.find_user_action_id(session_data)
-                
                 if action_id:
-                    # 构建选择英雄的URL
+                    # 检查是否为自动选择
+                    #hasattr(self, 'auto_select_btn') and
+                    if  self.auto_select_btn.isChecked():
+                        # 自动选择英雄
+                        action_url = f"https://riot:{self.auth_token}@127.0.0.1:{self.app_port}/lol-champ-select/v1/session/actions/{action_id}"
+                        response = requests.patch(
+                            action_url,
+                            json={
+                                "championId": champion_id,
+                                "completed": True,
+                            },
+                            auth=HTTPBasicAuth('riot', self.auth_token),
+                            verify=False,
+                            timeout=10
+                        )
+                        if response.status_code == 204:
+                            self.status_bar.showMessage(f"已自动选择英雄: {selected_hero_zh}")
+                        else:
+                            self.status_bar.showMessage(f"自动选择英雄失败: {response.status_code}")
+                        return
+                    # 手动选择逻辑
                     action_url = f"https://riot:{self.auth_token}@127.0.0.1:{self.app_port}/lol-champ-select/v1/session/actions/{action_id}"
-                    
-                    # 发送选择英雄的请求
                     response = requests.patch(
                         action_url,
                         json={
@@ -614,7 +639,6 @@ class LOLMatchHistoryApp(QMainWindow):
                         verify=False,
                         timeout=10
                     )
-                    
                     if response.status_code == 204:
                         self.status_bar.showMessage(f"已选择英雄: {selected_hero_zh}")
                     else:
@@ -623,7 +647,6 @@ class LOLMatchHistoryApp(QMainWindow):
                     self.status_bar.showMessage("未找到用户行动ID")
             else:
                 self.status_bar.showMessage(f"获取会话失败: {session_response.status_code}")
-                
         except Exception as e:
             self.status_bar.showMessage(f"选择英雄出错: {str(e)}")
             
@@ -669,19 +692,19 @@ class LOLMatchHistoryApp(QMainWindow):
 
     def on_teammates_found(self, teammate_puuids):
         """处理找到的队友信息"""
+        # 检测到队友后自动选择英雄
+        if hasattr(self, 'auto_select_btn') and self.auto_select_btn.isChecked():
+            self.select_champion()
         # 清理旧的标签页
         while self.result_tabs.count() > 1:  # 保留第一个"我的战绩"标签
             self.result_tabs.removeTab(1)
-            
         # 显示基本信息
         base_info = "<h3>当前队友：</h3>"
         for teammate in teammate_puuids:
             name = teammate['gameName']
             tag = teammate['tagLine']
             base_info += f"<p><b>{name}#{tag}</b></p>"
-        
         self.result_display.setHtml(base_info)
-        
         # 为每个队友创建新的标签页并开始获取战绩
         for teammate in teammate_puuids:
             # 创建新的文本显示区域
@@ -690,11 +713,9 @@ class LOLMatchHistoryApp(QMainWindow):
             teammate_display.setStyleSheet("background-color: #f8f9fa;")
             teammate_display.setOpenLinks(False)
             teammate_display.anchorClicked.connect(self.open_champion_url)
-            
             # 添加新标签页
             tab_name = f"{teammate['gameName']}#{teammate['tagLine']}"
             self.result_tabs.addTab(teammate_display, tab_name)
-            
             # 启动工作线程获取战绩
             worker = TeammateWorkerThread(
                 self.auth_token,
@@ -703,17 +724,14 @@ class LOLMatchHistoryApp(QMainWindow):
                 teammate['gameName'],
                 teammate['tagLine']
             )
-            
             # 保存引用避免垃圾回收
             if not hasattr(self, 'teammate_workers'):
                 self.teammate_workers = []
             self.teammate_workers.append(worker)
-            
             # 连接信号
             worker.result.connect(self.on_teammate_result)
             worker.error.connect(self.show_error)
             worker.progress.connect(self.update_progress)
-            
             # 开始获取战绩
             worker.start()
 
