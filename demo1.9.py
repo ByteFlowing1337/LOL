@@ -377,7 +377,10 @@ class LOLMatchHistoryApp(QMainWindow):
         # 标题
         title_label = QLabel("英雄联盟比赛记录获取工具")
         title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        title_label.setAlignment(Qt.AlignCenter)
+        try:
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        except Exception:
+            title_label.setAlignment(0x0004)  # Qt.AlignCenter = 0x0004
         title_label.setStyleSheet("color: #1e90ff; padding: 10px;")
         main_layout.addWidget(title_label)
         
@@ -455,6 +458,12 @@ class LOLMatchHistoryApp(QMainWindow):
         # 英雄选择布局
         hero_select_layout = QHBoxLayout()
         hero_select_layout.addWidget(QLabel("选择英雄:"))
+        
+        # 添加英雄搜索框
+        self.hero_search = QLineEdit()
+        self.hero_search.setPlaceholderText("搜索英雄...")
+        self.hero_search.textChanged.connect(self.filter_heroes)
+        hero_select_layout.addWidget(self.hero_search)
         
         # 英雄选择下拉框
         self.hero_combo = QComboBox()
@@ -777,7 +786,7 @@ class LOLMatchHistoryApp(QMainWindow):
             
             # 显示最近比赛
             result_text += f"<p><b>最近比赛详情:</b></p>"
-            for i, game in enumerate(games[:5], 1):  # 只显示最近5场
+            for i, game in enumerate(games[:20], 1):  # 只显示最近5场
                 result_text += self._generate_game_html(game, i, img_map)
                 
         text_browser.setHtml(result_text)
@@ -1141,6 +1150,17 @@ class LOLMatchHistoryApp(QMainWindow):
                 QMessageBox.information(self, "保存成功", f"数据已保存到:\n{file_path}")
             except Exception as e:
                 QMessageBox.critical(self, "保存失败", f"保存文件时出错:\n{str(e)}")
+
+    def filter_heroes(self, text):
+        """根据搜索文本过滤选择英雄下拉框"""
+        current_text = self.hero_combo.currentText()
+        self.hero_combo.clear()
+        heroes = sorted(CHAMPION_ZH_TO_ID.keys())
+        filtered = [hero for hero in heroes if text.lower() in hero.lower()]
+        self.hero_combo.addItems(filtered)
+        # 尝试恢复之前的选择
+        if current_text in filtered:
+            self.hero_combo.setCurrentText(current_text)
 
 
 if __name__ == "__main__":
