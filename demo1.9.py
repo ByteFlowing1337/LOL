@@ -18,6 +18,7 @@ from PyQt5.QtGui import QFont, QIcon, QTextDocument, QTextImageFormat, QTextCurs
 from PyQt5.QtGui import QDesktopServices
 import tempfile
 import ctypes
+from PyQt5 import QtCore
 
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -377,10 +378,7 @@ class LOLMatchHistoryApp(QMainWindow):
         # 标题
         title_label = QLabel("英雄联盟比赛记录获取工具")
         title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        try:
-            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        except Exception:
-            title_label.setAlignment(0x0004)  # Qt.AlignCenter = 0x0004
+        title_label.setAlignment(QtCore.Qt.AlignCenter)
         title_label.setStyleSheet("color: #1e90ff; padding: 10px;")
         main_layout.addWidget(title_label)
         
