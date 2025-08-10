@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QLineEdit, QPushButton, QTextEdit, QGroupBox,
     QStatusBar, QProgressBar, QMessageBox, QFileDialog, QTextBrowser,
-    QTabWidget, QScrollArea,QComboBox
+    QTabWidget, QScrollArea,QComboBox, QGridLayout
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QUrl
 from PyQt5.QtGui import QFont, QIcon, QTextDocument, QTextImageFormat, QTextCursor, QGuiApplication
@@ -359,37 +359,40 @@ class LOLMatchHistoryApp(QMainWindow):
         
     def init_ui(self):
         """初始化用户界面"""
-        self.setWindowTitle("Demo v1.0")
-        self.setGeometry(300, 200, 800, 600)
+        self.setWindowTitle("英雄联盟数据助手")
+        self.setGeometry(300, 200, 900, 700)  # 更大的窗口尺寸
         
         # 设置窗口图标
         icon_path = download_app_icon()
         if icon_path:
             self.setWindowIcon(QIcon(icon_path))
         
-        # 创建主部件
+        # 创建主部件和布局
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
-        
-        # 主布局
         main_layout = QVBoxLayout()
-        main_layout.setSpacing(15)
+        main_layout.setSpacing(20)  # 增加控件间距
+        main_layout.setContentsMargins(20, 20, 20, 20)  # 增加边距
         
         # 标题
-        title_label = QLabel("英雄联盟比赛记录获取工具")
-        title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        title_label.setAlignment(QtCore.Qt.AlignCenter)
-        title_label.setStyleSheet("color: #1e90ff; padding: 10px;")
+        title_label = QLabel("英雄联盟数据助手")
+        title_label.setFont(QFont("Microsoft YaHei", 24, QFont.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("""
+            color: #1976d2;
+            padding: 20px;
+            margin-bottom: 10px;
+        """)
         main_layout.addWidget(title_label)
         
         # 参数组
-        param_group = QGroupBox("连接参数")
+        param_group = QGroupBox("连接配置")
         param_layout = QVBoxLayout()
+        param_layout.setSpacing(15)
         
         # 自动检测区域
         auto_layout = QHBoxLayout()
-        self.auto_detect_btn = QPushButton("自动检测参数")
-        self.auto_detect_btn.setStyleSheet("background-color: #4CAF50; color: white;")
+        self.auto_detect_btn = QPushButton("🔄 自动检测")
         self.auto_detect_btn.clicked.connect(self.autodetect_params)
         auto_layout.addWidget(self.auto_detect_btn)
         
@@ -399,172 +402,123 @@ class LOLMatchHistoryApp(QMainWindow):
         param_layout.addLayout(auto_layout)
         
         # 手动输入区域
-        manual_layout = QVBoxLayout()
+        manual_layout = QGridLayout()
+        manual_layout.setSpacing(10)
         
-        token_layout = QHBoxLayout()
-        token_layout.addWidget(QLabel("认证令牌:"))
+        token_label = QLabel("认证令牌:")
         self.token_input = QLineEdit()
         self.token_input.setPlaceholderText("自动获取或手动输入")
-        token_layout.addWidget(self.token_input)
-        manual_layout.addLayout(token_layout)
+        manual_layout.addWidget(token_label, 0, 0)
+        manual_layout.addWidget(self.token_input, 0, 1)
         
-        port_layout = QHBoxLayout()
-        port_layout.addWidget(QLabel("应用端口:"))
+        port_label = QLabel("应用端口:")
         self.port_input = QLineEdit()
         self.port_input.setPlaceholderText("自动获取或手动输入")
-        port_layout.addWidget(self.port_input)
-        manual_layout.addLayout(port_layout)
+        manual_layout.addWidget(port_label, 1, 0)
+        manual_layout.addWidget(self.port_input, 1, 1)
         
         param_layout.addLayout(manual_layout)
         param_group.setLayout(param_layout)
         main_layout.addWidget(param_group)
         
-        # 召唤师输入区域
+        # 召唤师信息组
         summoner_group = QGroupBox("召唤师信息")
-        summoner_layout = QVBoxLayout()
+        summoner_layout = QHBoxLayout()
+        summoner_layout.setSpacing(10)
         
-        summoner_input_layout = QHBoxLayout()
-        summoner_input_layout.addWidget(QLabel("召唤师名称:"))
+        name_label = QLabel("召唤师名称:")
         self.summoner_input = QLineEdit()
         self.summoner_input.setPlaceholderText("输入召唤师名称")
-        summoner_input_layout.addWidget(self.summoner_input)
-        summoner_layout.addLayout(summoner_input_layout)
+        summoner_layout.addWidget(name_label)
+        summoner_layout.addWidget(self.summoner_input)
         
         summoner_group.setLayout(summoner_layout)
         main_layout.addWidget(summoner_group)
         
-        # 操作按钮
-        button_layout = QHBoxLayout()
+        # 英雄选择组
+        hero_group = QGroupBox("英雄选择")
+        hero_layout = QHBoxLayout()
+        hero_layout.setSpacing(10)
         
-        self.fetch_btn = QPushButton("获取比赛记录")
-        self.fetch_btn.setStyleSheet("background-color: #1e90ff; color: white; font-weight: bold;")
+        self.hero_search = QLineEdit()
+        self.hero_search.setPlaceholderText("🔍 搜索英雄...")
+        self.hero_search.textChanged.connect(self.filter_heroes)
+        
+        self.hero_combo = QComboBox()
+        self.hero_combo.addItems(sorted(CHAMPION_ZH_TO_ID.keys()))
+        
+        self.auto_select_btn = QPushButton("自动选择")
+        self.auto_select_btn.setCheckable(True)
+        
+        hero_layout.addWidget(self.hero_search)
+        hero_layout.addWidget(self.hero_combo)
+        hero_layout.addWidget(self.auto_select_btn)
+        
+        hero_group.setLayout(hero_layout)
+        main_layout.addWidget(hero_group)
+        
+        # 操作按钮组
+        button_group = QGroupBox("操作")
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(10)
+        
+        self.fetch_btn = QPushButton("📊 获取战绩")
         self.fetch_btn.clicked.connect(self.start_fetching)
         self.fetch_btn.setEnabled(False)
-        button_layout.addWidget(self.fetch_btn)
         
-        self.save_btn = QPushButton("保存数据")
-        self.save_btn.setStyleSheet("background-color: #FF8C00; color: white;")
+        self.save_btn = QPushButton("💾 保存数据")
         self.save_btn.clicked.connect(self.save_data)
         self.save_btn.setEnabled(False)
-        button_layout.addWidget(self.save_btn)
         
-        self.exit_btn = QPushButton("退出")
-        self.exit_btn.setStyleSheet("background-color: #dc3545; color: white;")
-        self.exit_btn.clicked.connect(self.close)
-        button_layout.addWidget(self.exit_btn)
-
-        # 英雄选择布局
-        hero_select_layout = QHBoxLayout()
-        hero_select_layout.addWidget(QLabel("选择英雄:"))
-        
-        # 添加英雄搜索框
-        self.hero_search = QLineEdit()
-        self.hero_search.setPlaceholderText("搜索英雄...")
-        self.hero_search.textChanged.connect(self.filter_heroes)
-        hero_select_layout.addWidget(self.hero_search)
-        
-        # 英雄选择下拉框
-        self.hero_combo = QComboBox()
-        self.hero_combo.addItems(sorted(CHAMPION_ZH_TO_ID.keys()))  # 按中文名排序
-        hero_select_layout.addWidget(self.hero_combo)
-        
-        # 选择英雄按钮（改为开关）
-        self.auto_select_btn = QPushButton("自动选择英雄")
-        self.auto_select_btn.setCheckable(True)
-        self.auto_select_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #9370DB;
-                color: white;
-            }
-            QPushButton:checked {
-                background-color: #28a745;
-            }
-        """)
-        hero_select_layout.addWidget(self.auto_select_btn)
-        # 保留手动选择按钮
-        self.select_hero_btn = QPushButton("手动选择")
-        self.select_hero_btn.setStyleSheet("background-color: #1e90ff; color: white;")
-        self.select_hero_btn.clicked.connect(self.select_champion)
-        
-        # 在按钮布局中添加自动接受对局的开关
-        self.auto_accept_btn = QPushButton("自动接受对局")
-        self.auto_accept_btn.setCheckable(True)  # 可切换的按钮
-        self.auto_accept_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                font-weight: bold;
-            }
-            QPushButton:checked {
-                background-color: #28a745;
-            }
-        """)
+        self.auto_accept_btn = QPushButton("🎮 自动接受")
+        self.auto_accept_btn.setCheckable(True)
         self.auto_accept_btn.clicked.connect(self.toggle_auto_accept)
         self.auto_accept_btn.setEnabled(False)
+        
+        self.exit_btn = QPushButton("❌ 退出")
+        self.exit_btn.clicked.connect(self.close)
+        
+        button_layout.addWidget(self.fetch_btn)
+        button_layout.addWidget(self.save_btn)
         button_layout.addWidget(self.auto_accept_btn)
-
-        # 添加状态标签
-        self.auto_accept_status = QLabel("")
-        self.auto_accept_status.setStyleSheet("color: #666;")
-        main_layout.addWidget(self.auto_accept_status)
+        button_layout.addWidget(self.exit_btn)
         
-        main_layout.addLayout(button_layout)
+        button_group.setLayout(button_layout)
+        main_layout.addWidget(button_group)
         
-        # 进度条
+        # 进度显示
+        progress_group = QGroupBox("进度")
+        progress_layout = QVBoxLayout()
+        progress_layout.setSpacing(10)
+        
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                text-align: center;
-                background: white;
-            }
-            QProgressBar::chunk {
-                background-color: #1e90ff;
-                width: 10px;
-            }
-        """)
-        main_layout.addWidget(self.progress_bar)
         
         self.progress_label = QLabel("准备就绪")
-        self.progress_label.setAlignment(Qt.AlignCenter)
-        self.progress_label.setStyleSheet("color: #666;")
-        main_layout.addWidget(self.progress_label)
+        self.progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        # 结果显示区域
+        self.auto_accept_status = QLabel("")
+        self.auto_accept_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        progress_layout.addWidget(self.progress_bar)
+        progress_layout.addWidget(self.progress_label)
+        progress_layout.addWidget(self.auto_accept_status)
+        
+        progress_group.setLayout(progress_layout)
+        main_layout.addWidget(progress_group)
+        
+        # 结果显示
         result_group = QGroupBox("比赛记录")
         result_layout = QVBoxLayout()
+        result_layout.setSpacing(10)
         
-        # 创建标签页控件
         self.result_tabs = QTabWidget()
-        self.result_tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 5px;
-            }
-            QTabBar::tab {
-                background: #f0f0f0;
-                border: 1px solid #ccc;
-                padding: 5px 10px;
-                margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background: #fff;
-                border-bottom: none;
-            }
-        """)
-        
-        # 创建默认的比赛记录显示页
         self.result_display = QTextBrowser()
         self.result_display.setReadOnly(True)
-        self.result_display.setStyleSheet("background-color: #f8f9fa;")
         self.result_display.setOpenLinks(False)
         self.result_display.anchorClicked.connect(self.open_champion_url)
         
-        # 添加默认标签页
         self.result_tabs.addTab(self.result_display, "战绩")
         result_layout.addWidget(self.result_tabs)
         
@@ -573,7 +527,6 @@ class LOLMatchHistoryApp(QMainWindow):
         
         # 设置主布局
         main_widget.setLayout(main_layout)
-        main_layout.addLayout(hero_select_layout)
         
         # 状态栏
         self.status_bar = QStatusBar()
@@ -1197,34 +1150,198 @@ if __name__ == "__main__":
     # 设置应用样式
     app.setStyleSheet("""
         QWidget {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            font-size: 14px;
+            color: #2c3e50;
         }
+        
+        QMainWindow {
+            background: #f8fafc;
+        }
+        
         QGroupBox {
             font-weight: bold;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-top: 1ex;
+            font-size: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin-top: 1.5ex;
+            background: white;
+            padding: 15px;
         }
+        
         QGroupBox::title {
             subcontrol-origin: margin;
             subcontrol-position: top center;
-            padding: 0 5px;
+            padding: 0 15px;
+            color: #3b82f6;
+            font-size: 16px;
+            font-weight: bold;
+            background: transparent;
         }
+        
+        QLabel {
+            color: #334155;
+            font-size: 14px;
+        }
+        
+        QLineEdit, QComboBox {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            min-height: 20px;
+            selection-background-color: #3b82f6;
+            selection-color: white;
+        }
+        
+        QLineEdit:focus, QComboBox:focus {
+            border: 2px solid #3b82f6;
+            background: #f0f9ff;
+        }
+        
+        QLineEdit:hover, QComboBox:hover {
+            border: 2px solid #93c5fd;
+        }
+        
+        QComboBox::drop-down {
+            border: none;
+            width: 20px;
+        }
+        
+        QComboBox::down-arrow {
+            image: none;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #64748b;
+            margin-right: 8px;
+        }
+        
+        QComboBox:on {
+            border: 2px solid #3b82f6;
+        }
+        
+        QComboBox QAbstractItemView {
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            background: white;
+            selection-background-color: #f0f9ff;
+            selection-color: #2c3e50;
+        }
+        
         QPushButton {
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            min-width: 100px;
+            min-height: 20px;
+            background: #3b82f6;
+            color: white;
+        }
+        
+        QPushButton:hover {
+            background: #2563eb;
+        }
+        
+        QPushButton:pressed {
+            background: #1d4ed8;
+        }
+        
+        QPushButton:disabled {
+            background: #94a3b8;
+        }
+        
+        QPushButton:checked {
+            background: #059669;
+        }
+        
+        QPushButton[text="❌ 退出"] {
+            background: #ef4444;
             min-width: 80px;
         }
-        QLineEdit, QTextEdit {
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+        
+        QPushButton[text="❌ 退出"]:hover {
+            background: #dc2626;
         }
-        QTextEdit {
-            font-family: 'Consolas', 'Courier New', monospace;
-        }
+        
         QProgressBar {
-            height: 20px;
+            border: none;
+            border-radius: 8px;
+            background: #e2e8f0;
+            height: 16px;
+            text-align: center;
+            margin: 0px 10px;
+            font-size: 12px;
+            color: white;
+        }
+        
+        QProgressBar::chunk {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #3b82f6, stop:1 #2563eb);
+            border-radius: 8px;
+        }
+        
+        QTabWidget::pane {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            top: -1px;
+        }
+        
+        QTabBar::tab {
+            background: #f1f5f9;
+            border: none;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            padding: 8px 16px;
+            margin-right: 4px;
+            color: #64748b;
+        }
+        
+        QTabBar::tab:selected {
+            background: white;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        
+        QTabBar::tab:hover {
+            background: #e2e8f0;
+        }
+        
+        QTextBrowser {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            selection-background-color: #3b82f6;
+            selection-color: white;
+        }
+        
+        QScrollBar:vertical {
+            border: none;
+            background: #f1f5f9;
+            width: 10px;
+            border-radius: 5px;
+            margin: 0px;
+        }
+        
+        QScrollBar::handle:vertical {
+            background: #94a3b8;
+            border-radius: 5px;
+            min-height: 20px;
+        }
+        
+        QScrollBar::handle:vertical:hover {
+            background: #64748b;
+        }
+        
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            height: 0px;
+        }
+        
+        QStatusBar {
+            background: #f8fafc;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
         }
     """)
     
