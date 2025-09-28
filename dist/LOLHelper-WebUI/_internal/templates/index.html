@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOLHelper - WebUI</title>
+    <style>
+        /* --- 基础样式 --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #1a202c;
+        }
+        
+        /* --- 组件样式 --- */
+        .card {
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        input[type="text"] {
+            padding: 0.75em;
+            width: calc(100% - 1.5em);
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+        button {
+            padding: 0.75em 1.5em;
+            border-radius: 6px;
+            border: none;
+            background-color: #3182ce;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        button:hover {
+            background-color: #2b6cb0;
+        }
+        
+        /* --- 状态与结果样式 --- */
+        .status-text {
+            font-style: italic;
+            color: #718096;
+        }
+        .status-text.connected {
+            color: #38a169;
+            font-weight: bold;
+        }
+        .status-text.error {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        .results-area {
+            margin-top: 1.5em;
+            padding-top: 1.5em;
+            border-top: 1px solid #e2e8f0;
+        }
+        .win { color: #38a169; }
+        .loss { color: #e53e3e; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>LOLHelper - WebUI Demo</h1>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>连接配置</h2>
+            <button id="detect-btn">自动检测连接</button>
+            <p>状态: <span id="connection-status" class="status-text">未连接</span></p>
+        </section>
+
+        <section class="card">
+            <h2>战绩查询</h2>
+            <label for="summoner-name-input">召唤师名称</label>
+            <input type="text" id="summoner-name-input" placeholder="输入召唤师名称后点击查询">
+            <button id="fetch-btn">获取战绩</button>
+            <div id="results-area" class="results-area">
+                <p class="status-text">请先输入召唤师名称并查询。</p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>自动化功能</h2>
+            <button id="auto-accept-btn">开启自动接受与队友分析</button>
+            <p>实时状态: <span id="realtime-status" class="status-text">等待指令...</span></p>
+            <div id="teammate-results-area" class="results-area">
+                 </div>
+        </section>
+    </main>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/static/js/main.js"></script>
+
+</body>
+</html>
