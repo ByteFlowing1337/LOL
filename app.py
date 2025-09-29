@@ -2,7 +2,8 @@
 from flask import Flask, render_template, jsonify, request # 确保 request 已导入
 from flask_socketio import SocketIO, emit
 import threading
-import time
+import time,socket
+import webbrowser # 用于在浏览器中打开地址
 
 
 
@@ -69,19 +70,28 @@ def index():
   return render_template('index.html')
 
 @app.route('/autodetect', methods=['POST'])
-def autodetect():
-  """自动检测LCU凭证"""
-  global lcu_credentials
-  status_proxy = SocketIOMessageProxy()
-  
-  # FIX: 传入 status_proxy，解决 TypeError: autodetect_credentials() missing 1 required positional argument: 'status_bar'
-  token, port = lcu_api.autodetect_credentials(status_proxy)
-  
-  if token and port:
-    lcu_credentials["auth_token"] = token
-    lcu_credentials["app_port"] = port
-    return jsonify({"success": True, "token": token, "port": port})
-  return jsonify({"success": False, "message": "未找到凭证，请确保游戏正在运行。"})
+# app.py 中的 detect_and_connect_lcu 函数
+
+def detect_and_connect_lcu(status_proxy):
+    """后台任务：尝试获取 LCU 凭证"""
+    global lcu_credentials
+    
+    status_proxy.showMessage("正在自动检测英雄联盟客户端 (进程和凭证)...")
+    
+    # 🎯 使用 lcu_api.autodetect_credentials，它现在包含了进程检测
+    token, port = lcu_api.autodetect_credentials(status_proxy)
+
+    if token and port:
+        lcu_credentials["auth_token"] = token
+        lcu_credentials["app_port"] = port
+        # 通知前端最终的成功状态
+        status_proxy.showMessage(f"✅ LCU 连接成功！端口: {port}。")
+    else:
+        lcu_credentials["auth_token"] = None
+        lcu_credentials["app_port"] = None
+        # 注意：失败的详细原因会由 lcu_api.autodetect_credentials 里的 showMessage 发送。
+        # 这里的提示作为最终的失败结论。
+        status_proxy.showMessage("❌ 连接 LCU 失败。请检查客户端是否运行或重启程序。")
 
 # 核心修改点在这里
 @app.route('/get_history', methods=['GET'])
@@ -131,8 +141,13 @@ def get_history():
 
 @socketio.on('connect')
 def handle_connect():
-  print('浏览器客户端已连接')
-  emit('status_update', {'message': '已连接到本地服务器'})
+  print('浏览器客户端已连接，触发自动检测...')
+  # 创建状态代理，用于将消息发送回浏览器
+  status_proxy = SocketIOMessageProxy()
+  status_proxy.showMessage('已连接到本地服务器，开始自动检测LCU...')
+  
+
+  socketio.start_background_task(detect_and_connect_lcu, status_proxy)
 
 @socketio.on('start_auto_accept')
 def handle_start_auto_accept():
@@ -146,7 +161,35 @@ def handle_start_auto_accept():
       emit('status_update', {'message': '自动接受功能已开启'})
 
 # 注意：为了简化，这里没有提供停止后台任务的逻辑，在实际应用中需要添加。
-
+def get_local_ip():
+    """尝试获取本地局域网（内网）IP地址。"""
+    try:
+        # 创建一个UDP socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # 尝试连接一个外部地址（例如 Google DNS），但数据不会真正发送
+        # 这一步是为了让操作系统选择一个合适的网络接口，从而获取到对应的内网IP
+        s.connect(('10.255.255.255', 1))
+        # 获取socket连接的本机地址
+        ip_address = s.getsockname()[0]
+    except Exception:
+        # 如果获取失败，则使用本地回环地址
+        ip_address = '127.0.0.1'
+    finally:
+        s.close()
+    return ip_address
 if __name__ == '__main__':
-  print("服务器启动，请在浏览器中打开 http://127.0.0.1:5000")
-  socketio.run(app, host='127.0.0.1', port=5000)
+    local_ip = get_local_ip()
+    server_address = f'http://{local_ip}:5000'
+    def open_browser():
+        print(f"尝试在浏览器中打开: {server_address}")
+        webbrowser.open(server_address)
+        
+    # 延迟 0.5 秒启动浏览器
+    threading.Timer(0.5, open_browser).start()
+    
+    # 输出启动信息，同时提示用户可以使用局域网 IP 访问
+    print(f"LOLHelperWeb已启动！")
+    print(f"本机访问地址: http://127.0.0.1:5000")
+    print(f"局域网访问地址: {server_address} (请确保防火墙已允许)")
+    
+    socketio.run(app, host='0.0.0.0', port=5000)

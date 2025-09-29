@@ -19,9 +19,42 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('成功连接到WebSocket服务器!');
     });
 
-    socket.on('status_update', (data) => {
-        console.log('状态更新:', data.message);
-        realtimeStatus.textContent = data.message;
+    // 🎯 1. 监听后端发送的 'status_update' 事件
+     socket.on('connect', () => {
+        console.log('成功连接到WebSocket服务器!');
+    });
+
+    socket.on('status_update', function(data) {
+        const statusElement = document.getElementById('lcu-status');
+        const statusBox = document.getElementById('connection-status-box');
+        // 🚨 注意：后端 app.py 中，我们使用 'message' 键发送消息
+        const message = data.message || data.data; // 兼容 'message' 和 'data' 键
+
+        if (!statusElement || !statusBox) return;
+
+        console.log('LCU状态更新:', message);
+        statusElement.textContent = message; // 🎯 仅更新 LCU 连接状态框
+
+        // 🎯 移除：不再让 LCU 连接状态更新 `#realtime-status` 区域。
+        // `#realtime-status` 将只在 'start_auto_accept' 按钮点击时更新。
+
+        // 2. 根据消息内容判断状态并设置样式
+        if (message.includes('成功')) {
+            // 连接成功 (绿色背景)
+            statusBox.style.backgroundColor = '#d4edda'; // 浅绿色
+            statusBox.style.color = '#155724'; // 深绿色文本
+            statusBox.style.borderColor = '#c3e6cb'; // 边框
+        } else if (message.includes('失败') || message.includes('未运行') || message.includes('未找到')) {
+            // 连接失败 (红色背景)
+            statusBox.style.backgroundColor = '#f8d7da'; // 浅红色
+            statusBox.style.color = '#721c24'; // 深红色文本
+            statusBox.style.borderColor = '#f5c6cb'; // 边框
+        } else {
+            // 正在检测中/等待指令 (蓝色/中性背景)
+            statusBox.style.backgroundColor = '#cce5ff'; // 浅蓝色
+            statusBox.style.color = '#004085'; // 深蓝色文本
+            statusBox.style.borderColor = '#b8daff'; // 边框
+        }
     });
 
     socket.on('teammates_found', (data) => {
@@ -40,26 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- 按钮点击事件 ---
-    detectBtn.addEventListener('click', () => {
-        connectionStatus.textContent = '正在检测 LCU 客户端...';
-        connectionStatus.style.color = '#f97316'; // Orange color while detecting
+   
 
-        fetch('/autodetect', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    connectionStatus.textContent = `✅ 已连接 (端口: ${data.port})`;
-                    connectionStatus.style.color = 'green';
-                } else {
-                    connectionStatus.textContent = `❌ 检测失败: ${data.message}`;
-                    connectionStatus.style.color = 'red';
-                }
-            })
-            .catch(() => {
-                connectionStatus.textContent = '❌ 连接服务器失败，请检查后端运行状态。';
-                connectionStatus.style.color = 'red';
-            });
-    });
 
     fetchBtn.addEventListener('click', () => {
         const summonerName = summonerNameInput.value.trim();

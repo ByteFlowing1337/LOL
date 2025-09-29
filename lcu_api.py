@@ -5,6 +5,7 @@ from requests.auth import HTTPBasicAuth # 确保导入 HTTPBasicAuth，用于 LC
 import json
 import datetime
 import chardet
+import psutil
 from time import sleep 
 # 假设 LOG_DIR, constants 等在其他文件中定义，这里只保留需要的导入
 from constants import LOG_DIR 
@@ -13,6 +14,21 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- 辅助函数：文件操作和凭证提取 ---
+
+def is_league_client_running(status_bar):
+    """
+    检测 LeagueClient.exe 进程是否正在运行。
+    """
+    client_process_name = "LeagueClientUx.exe" # 有时是 LeagueClient.exe 或 LeagueClientUx.exe，这里使用更准确的
+    
+    # 遍历所有正在运行的进程
+    for proc in psutil.process_iter(['name']):
+        if proc.info['name'] == client_process_name:
+            status_bar.showMessage(f"✅ 检测到进程: {client_process_name} 正在运行。")
+            return True
+            
+    status_bar.showMessage(f"❌ 未检测到进程: {client_process_name}。请先启动客户端。")
+    return False
 
 def detect_file_encoding(file_path, status_bar):
     """检测文件编码，现在是独立函数。"""
@@ -84,10 +100,22 @@ def extract_params_from_log(log_file, status_bar):
         status_bar.showMessage(f"读取日志文件时出错: {e}")
         return None, None
 
+
+
 def autodetect_credentials(status_bar):
-    """自动检测LCU凭证的入口函数，现在是独立函数。"""
-    status_bar.showMessage("正在尝试自动检测 LCU 凭证...")
+    """
+    自动检测LCU凭证的入口函数：
+    1. 检查 LeagueClientUx.exe 进程是否运行。
+    2. 如果进程运行，则尝试从最新日志中提取凭证。
+    """
+    status_bar.showMessage("正在尝试自动检测 LCU 凭证 (进程+日志)...")
     
+    # 🎯 步骤 1: 检查进程
+    if not is_league_client_running(status_bar):
+        status_bar.showMessage("⚠️ 进程检测失败。无法连接 LCU。")
+        return None, None
+        
+    # 进程运行，继续读取日志
     log_file = get_latest_log_file(status_bar)
     
     if log_file:
@@ -95,13 +123,13 @@ def autodetect_credentials(status_bar):
         auth_token, app_port = extract_params_from_log(log_file, status_bar)
         
         if auth_token and app_port:
-            status_bar.showMessage("✅ 参数自动获取成功!")
+            status_bar.showMessage("✅ LCU 进程和参数均自动获取成功!")
         else:
-            status_bar.showMessage("⚠️ 自动获取失败，请确保客户端正在运行。")
+            status_bar.showMessage("⚠️ 进程运行中，但日志中未找到 LCU 凭证。")
             
         return auth_token, app_port
     else:
-        status_bar.showMessage("⚠️ 未找到日志文件，请确保游戏已启动。")
+        status_bar.showMessage("⚠️ 进程运行中，但未找到有效的日志文件。")
         return None, None
 
 # --- LCU API 通用请求函数 (使用 HTTPBasicAuth) ---
@@ -212,5 +240,5 @@ def get_match_history(token, port, puuid):
         endpoint,
         token,
         port,
-        params={'endIndex': 5} # 仅保留 endIndex，限制查询最近5场比赛
+        params={'endIndex': 1} # 仅保留 endIndex，限制查询最近5场比赛
     )
