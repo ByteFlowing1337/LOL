@@ -103,8 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         html += `
                             <p class="game-item ${resultClass}">
                                 <img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${game.champion_en}.png" 
-                                     alt="${game.champion_zh}" width="32" style="vertical-align: middle; border-radius: 50%;">
-                                <strong>${game.champion_zh}</strong> | 
+                                     alt="${game.champion_en}" width="32" style="vertical-align: middle; border-radius: 50%;">
+                                <strong>${game.champion_en}</strong> | 
                                 KDA: ${game.kda} | 
                                 <span class="${resultClass} font-bold">${resultText}</span> (${game.gameMode})
                             </p>

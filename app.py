@@ -10,7 +10,7 @@ import webbrowser # 用于在浏览器中打开地址
 # 导入我们已有的模块
 import lcu_api
 # 假设 constants 包含 CHAMPION_MAP, CHAMPION_ZH_MAP，这里无需修改
-from constants import CHAMPION_MAP, CHAMPION_ZH_MAP 
+from constants import CHAMPION_MAP
 
 # --- Flask 和 SocketIO 初始化 ---
 app = Flask(__name__)
@@ -119,16 +119,16 @@ def get_history():
     
   # 对数据进行一些处理，方便前端展示
   processed_games = []
-  for game in history.get('games', {}).get('games', [])[:5]: # 只取最近5场
+  for game in history.get('games', {}).get('games', [])[:10]: # 只取最近5场
     # FIX: 修正索引错误：participant = game['participants'][0'] -> participant = game['participants'][0]
     # 假设 'participants' 列表第一个元素就是当前召唤师的信息，这在 LCU API 返回的战绩数据中是常见的简化做法。
     participant = game['participants'][0] 
     champion_en = CHAMPION_MAP.get(participant['championId'], 'Unknown')
-    champion_zh = CHAMPION_ZH_MAP.get(champion_en, champion_en)
+   # champion_zh = CHAMPION_ZH_MAP.get(champion_en, champion_en)
     stats = participant['stats']
     processed_games.append({
       "champion_en": champion_en,
-      "champion_zh": champion_zh,
+      # "champion_zh": champion_zh,
       "kda": f"{stats['kills']}/{stats['deaths']}/{stats['assists']}",
       "win": stats['win'],
       "gameMode": game['gameMode']

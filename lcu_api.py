@@ -19,7 +19,7 @@ def is_league_client_running(status_bar):
     """
     检测 LeagueClient.exe 进程是否正在运行。
     """
-    client_process_name = "LeagueClientUx.exe" # 有时是 LeagueClient.exe 或 LeagueClientUx.exe，这里使用更准确的
+    client_process_name = "LeagueClientUx.exe" 
     
     # 遍历所有正在运行的进程
     for proc in psutil.process_iter(['name']):
@@ -240,5 +240,5 @@ def get_match_history(token, port, puuid):
         endpoint,
         token,
         port,
-        params={'endIndex': 1} # 仅保留 endIndex，限制查询最近5场比赛
+        params={'endIndex': 15} # 仅保留 endIndex，限制查询最近5场比赛
     )
