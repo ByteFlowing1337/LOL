@@ -9,7 +9,6 @@ import psutil
 from time import sleep 
 # 假设 LOG_DIR, constants 等在其他文件中定义，这里只保留需要的导入
 from constants import LOG_DIR 
-# 禁用SSL警告
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
