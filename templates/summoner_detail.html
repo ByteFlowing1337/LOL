@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ summoner_name }} - 详细战绩</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        .game-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1rem;
+        }
+        .game-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .win-bg { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); }
+        .loss-bg { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); }
+        .item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin: 2px;
+        }
+        .champion-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .stats-badge {
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+            margin: 0.2rem;
+        }
+        .back-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<a href="/" class="btn btn-primary back-button">
+    <i class="bi bi-arrow-left me-2"></i>返回主页
+</a>
+
+<div class="container">
+    <header class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-dark">
+            <i class="bi bi-person-circle me-2 text-primary"></i>{{ summoner_name }}
+        </h1>
+        <p class="lead text-muted">详细历史战绩</p>
+    </header>
+
+    <div id="loading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="mt-3 text-muted">正在加载战绩数据...</p>
+    </div>
+
+    <div id="stats-summary" class="row mb-4" style="display: none;">
+        <!-- 统计摘要将由JavaScript填充 -->
+    </div>
+
+    <div id="games-container">
+        <!-- 游戏列表将由JavaScript填充 -->
+    </div>
+
+    <div id="error-message" class="alert alert-danger d-none" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span id="error-text"></span>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const summonerName = "{{ summoner_name }}";
+    
+    async function loadSummonerDetails() {
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const gamesContainer = document.getElementById('games-container');
+        const summaryDiv = document.getElementById('stats-summary');
+
+        try {
+            const response = await fetch(`/get_history?name=${encodeURIComponent(summonerName)}`);
+            const data = await response.json();
+
+            loadingDiv.style.display = 'none';
+
+            if (!data.success || !data.games || data.games.length === 0) {
+                errorDiv.classList.remove('d-none');
+                errorText.textContent = data.message || '未找到战绩数据';
+                return;
+            }
+
+            // 显示统计摘要
+            displayStatsSummary(data.games, summaryDiv);
+            
+            // 显示游戏列表
+            displayGames(data.games, gamesContainer);
+
+        } catch (error) {
+            console.error('加载战绩失败:', error);
+            loadingDiv.style.display = 'none';
+            errorDiv.classList.remove('d-none');
+            errorText.textContent = '网络错误，请稍后重试';
+        }
+    }
+
+    function displayStatsSummary(games, container) {
+        const totalGames = games.length;
+        const wins = games.filter(g => g.win).length;
+        const losses = totalGames - wins;
+        const winRate = ((wins / totalGames) * 100).toFixed(1);
+
+        let totalKills = 0, totalDeaths = 0, totalAssists = 0;
+        games.forEach(game => {
+            const [k, d, a] = game.kda.split('/').map(Number);
+            totalKills += k;
+            totalDeaths += d;
+            totalAssists += a;
+        });
+
+        const avgKills = (totalKills / totalGames).toFixed(1);
+        const avgDeaths = (totalDeaths / totalGames).toFixed(1);
+        const avgAssists = (totalAssists / totalGames).toFixed(1);
+        const kdaRatio = totalDeaths > 0 ? ((totalKills + totalAssists) / totalDeaths).toFixed(2) : 'Perfect';
+
+        container.innerHTML = `
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">总场次</h6>
+                        <h3 class="mb-0">${totalGames}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">胜率</h6>
+                        <h3 class="mb-0 ${winRate >= 50 ? 'text-success' : 'text-danger'}">${winRate}%</h3>
+                        <small class="text-muted">${wins}胜 ${losses}败</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">平均KDA</h6>
+                        <h3 class="mb-0 text-info">${kdaRatio}</h3>
+                        <small class="text-muted">${avgKills} / ${avgDeaths} / ${avgAssists}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">最常使用</h6>
+                        <h5 class="mb-0">${getMostPlayedChampion(games)}</h5>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.style.display = 'flex';
+    }
+
+    function getMostPlayedChampion(games) {
+        const champCount = {};
+        games.forEach(game => {
+            champCount[game.champion_en] = (champCount[game.champion_en] || 0) + 1;
+        });
+        const mostPlayed = Object.entries(champCount).sort((a, b) => b[1] - a[1])[0];
+        return mostPlayed ? `${mostPlayed[0]} (${mostPlayed[1]}场)` : 'N/A';
+    }
+
+    function displayGames(games, container) {
+        container.innerHTML = games.map((game, index) => {
+            const winClass = game.win ? 'win-bg' : 'loss-bg';
+            const winText = game.win ? '胜利' : '失败';
+            const winIcon = game.win ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
+            const [kills, deaths, assists] = game.kda.split('/');
+            const kda = deaths > 0 ? ((parseInt(kills) + parseInt(assists)) / parseInt(deaths)).toFixed(2) : 'Perfect';
+
+            return `
+                <div class="card game-card ${winClass}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <!-- 左侧：英雄信息 -->
+                            <div class="col-md-2 col-sm-3 text-center">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${game.champion_en}.png" 
+                                     alt="${game.champion_en}" 
+                                     class="champion-icon mb-2">
+                                <h6 class="mb-0">${game.champion_en}</h6>
+                            </div>
+
+                            <!-- 中间：战绩数据 -->
+                            <div class="col-md-6 col-sm-5">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-${winIcon} me-2 fs-5"></i>
+                                    <h5 class="mb-0 fw-bold">${winText}</h5>
+                                    <span class="badge bg-secondary ms-2">${game.mode}</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge stats-badge bg-dark">
+                                        <i class="bi bi-diagram-3 me-1"></i>
+                                        KDA: ${game.kda}
+                                    </span>
+                                    <span class="badge stats-badge ${kda >= 3 ? 'bg-success' : kda >= 2 ? 'bg-info' : 'bg-warning'}">
+                                        <i class="bi bi-star-fill me-1"></i>
+                                        比值: ${kda}
+                                    </span>
+                                    <span class="badge stats-badge bg-primary">
+                                        <i class="bi bi-coin me-1"></i>
+                                        ${game.gold} 金币
+                                    </span>
+                                    ${game.cs ? `<span class="badge stats-badge bg-info">
+                                        <i class="bi bi-bullseye me-1"></i>
+                                        ${game.cs} CS
+                                    </span>` : ''}
+                                </div>
+                            </div>
+
+                            <!-- 右侧：时间和序号 -->
+                            <div class="col-md-4 col-sm-4 text-end">
+                                <small class="text-muted d-block mb-2">
+                                    <i class="bi bi-clock me-1"></i>${game.time_ago}
+                                </small>
+                                <span class="badge bg-light text-dark">第 ${index + 1} 场</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 页面加载时执行
+    document.addEventListener('DOMContentLoaded', loadSummonerDetails);
+</script>
+
+</body>
+</html>

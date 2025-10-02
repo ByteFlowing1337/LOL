@@ -3,8 +3,64 @@ import winreg,os
 # --- LCU 根路径查找函数 ---
 
 # 日志目录路径
-LOG_DIR = r"C:\WeGameApps\英雄联盟\LeagueClient"
+def find_league_client_root_static():
+    """
+    尝试通过注册表查找英雄联盟客户端的安装根目录 (LeagueClient 文件夹)。
+    查找失败时，尝试通用路径作为后备。
+    """
+    # 注册表路径（适用于 Riot Client 安装）
+    REG_KEY_PATH = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game league_of_legends.live"
+    
+    # 尝试从注册表读取路径
+    try:
+        # 使用 KEY_WOW64_64KEY 确保在 64 位系统上找到 64 位应用程序的键
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, REG_KEY_PATH, 0, winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
+        # 查找名为 'InstallLocation' 的值，例如: C:\Riot Games\League of Legends
+        install_location, _ = winreg.QueryValueEx(key, "InstallLocation")
+        winreg.CloseKey(key)
+        
+        # 检查路径是否有效
+        if os.path.isdir(install_location):
+            # LCU 日志位于此根目录的 Logs/LeagueClient Logs 子目录中
+            # 但 Riot Games 的根目录通常是 LOL 文件夹。我们需要找到最终的 LeagueClient 文件夹。
+            # 对于 Riot Games 安装，根目录可能已经是 C:\Riot Games\League of Legends，
+            # WeGame 安装则可能是 C:\WeGameApps\英雄联盟\LeagueClient
+            
+            # 简单返回注册表中的路径，通常是客户端的根目录
+            return install_location 
+            
+    except FileNotFoundError:
+        pass 
+    except Exception:
+        pass 
 
+    # 2. 后备方案：尝试常见的默认路径
+    common_paths = [
+        r"C:\Riot Games\League of Legends", # Riot Games 默认路径
+        r"D:\Riot Games\League of Legends",
+        r"C:\WeGameApps\英雄联盟\LeagueClient" # WeGame 默认路径
+    ]
+    
+    for path in common_paths:
+        if os.path.isdir(path):
+            return path
+            
+    # 3. 彻底失败
+    return None
+
+# ----------------------------------------------------
+# 2. 定义两个全局常量
+# ----------------------------------------------------
+
+# CLIENT_ROOT_PATH: LeagueClient 的根目录 (你想要的结果)
+CLIENT_ROOT_PATH = find_league_client_root_static()
+
+if CLIENT_ROOT_PATH:
+    # LOG_DIR: LCU 日志文件的精确目录 (lcu_api.py 需要的结果)
+    LOG_DIR = os.path.join(CLIENT_ROOT_PATH)
+else:
+    # 如果找不到根目录，将 LOG_DIR 设置为 None
+    LOG_DIR = None
 # 英雄ID到名称的映射
 CHAMPION_MAP = {
 266: "Aatrox",103: "Ahri",84: "Akali",166: "Akshan",12: "Alistar",799: "Ambessa",32: "Amumu",34: "Anivia",1: "Annie",523: "Aphelios",22: "Ashe",136: "Aurelion Sol",893: "Aurora",
