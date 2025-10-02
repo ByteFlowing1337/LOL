@@ -15,6 +15,7 @@ class AppState:
         # 功能开关
         self.auto_accept_enabled = False
         self.auto_analyze_enabled = False
+        self.vision_detection_enabled = False  # CV检测开关
         
         # 分析状态
         self.teammate_analysis_done = False
@@ -30,6 +31,7 @@ class AppState:
         # 线程引用
         self.auto_accept_thread = None
         self.auto_analyze_thread = None
+        self.vision_detection_thread = None  # CV检测线程
     
     def reset_analysis_state(self):
         """重置分析状态"""

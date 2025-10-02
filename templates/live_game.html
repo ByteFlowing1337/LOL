@@ -271,8 +271,8 @@
     // 刷新按钮
     document.getElementById('refresh-btn').addEventListener('click', loadGameData);
 
-    // 自动刷新（每2秒）
-    refreshInterval = setInterval(loadGameData, 2000);
+    // 自动刷新（每1秒）
+    refreshInterval = setInterval(loadGameData, 1000);
 
     // 页面加载时首次加载
     loadGameData();

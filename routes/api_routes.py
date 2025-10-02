@@ -12,6 +12,9 @@ import requests
 # 创建蓝图
 api_bp = Blueprint('api', __name__)
 
+# 向后兼容的别名
+api = api_bp
+
 
 @api_bp.route('/')
 def index():
@@ -36,12 +39,23 @@ def summoner_detail(summoner_name):
 @api_bp.route('/live_game')
 def live_game():
     """
-    渲染实时游戏详情页面
+    渲染实时游戏监控页面
     
     Returns:
         HTML: 实时游戏详情页面
     """
     return render_template('live_game.html')
+
+
+@api_bp.route('/vision_detection')
+def vision_detection():
+    """
+    渲染CV视觉检测页面
+    
+    Returns:
+        HTML: CV视觉检测页面
+    """
+    return render_template('vision_detection.html')
 
 
 @api_bp.route('/get_history', methods=['GET'])

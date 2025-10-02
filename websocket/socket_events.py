@@ -5,6 +5,7 @@ import threading
 from flask_socketio import emit
 from config import app_state
 from services import auto_accept_task, auto_analyze_task
+from services.vision_service import vision_detection_task, capture_screenshot_task
 import lcu_api
 
 
@@ -68,9 +69,39 @@ def register_socket_events(socketio):
                 )
                 app_state.auto_analyze_thread.start()
                 emit('status_update', {'message': '✅ 敌我分析功能已开启'})
-                print("📊 敌我分析功能已启动")
+                print("🔍 敌我分析功能已启动")
             else:
                 emit('status_update', {'message': '⚠️ 敌我分析功能已在运行中'})
+    
+    @socketio.on('start_vision_detection')
+    def handle_start_vision_detection():
+        """启动CV视觉检测"""
+        with thread_lock:
+            if app_state.vision_detection_thread is None or not app_state.vision_detection_thread.is_alive():
+                app_state.vision_detection_enabled = True
+                app_state.vision_detection_thread = threading.Thread(
+                    target=vision_detection_task,
+                    args=(socketio,),
+                    daemon=True
+                )
+                app_state.vision_detection_thread.start()
+                emit('status_update', {'message': '✅ CV视觉检测已开启'})
+                print("🎥 CV视觉检测功能已启动")
+            else:
+                emit('status_update', {'message': '⚠️ CV检测已在运行中'})
+    
+    @socketio.on('stop_vision_detection')
+    def handle_stop_vision_detection():
+        """停止CV视觉检测"""
+        app_state.vision_detection_enabled = False
+        emit('status_update', {'message': '⏸️ CV视觉检测已停止'})
+        print("🎥 CV视觉检测已停止")
+    
+    @socketio.on('capture_screenshot')
+    def handle_capture_screenshot():
+        """手动截图"""
+        print("📸 收到截图请求")
+        socketio.start_background_task(capture_screenshot_task, socketio)
 
 
 def _detect_and_connect_lcu(socketio, status_proxy):

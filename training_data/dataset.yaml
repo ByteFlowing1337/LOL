@@ -1,0 +1,19 @@
+# LOL YOLO数据集配置
+path: ./training_data  # 数据集根目录
+train: images/train    # 训练集图片目录
+val: images/val        # 验证集图片目录
+test: images/test      # 测试集图片目录（可选）
+
+# 类别数量
+nc: 8
+
+# 类别名称
+names:
+  0: champion_casting      # 英雄抬手/施法
+  1: enemy_champion        # 敌方英雄
+  2: ally_champion         # 友方英雄
+  3: skillshot_indicator   # 技能指示器
+  4: danger_ping           # 危险信号
+  5: objective_spawn       # 目标刷新
+  6: low_health            # 低血量
+  7: enemy_ward            # 敌方眼位
