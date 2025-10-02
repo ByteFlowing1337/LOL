@@ -9,6 +9,14 @@ from constants import CHAMPION_MAP
 from utils.game_data_formatter import format_game_data
 import requests
 
+# 导入OP.GG API
+try:
+    from services.opgg_api import get_opgg_api, get_english_champion_name
+    OPGG_AVAILABLE = True
+except ImportError:
+    OPGG_AVAILABLE = False
+    print("⚠️ OP.GG API不可用")
+
 # 创建蓝图
 api_bp = Blueprint('api', __name__)
 
@@ -105,6 +113,15 @@ def get_history():
     # 处理数据
     processed_games = _process_match_history(history)
     
+    # 为每个游戏添加OP.GG数据
+    if OPGG_AVAILABLE:
+        opgg_api = get_opgg_api()
+        for game in processed_games:
+            champion_en = game.get('champion_en', '')
+            if champion_en:
+                opgg_data = opgg_api.get_champion_stats(champion_en)
+                game['opgg'] = opgg_data if opgg_data else None
+    
     return jsonify({
         "success": True, 
         "games": processed_games
@@ -127,6 +144,17 @@ def get_live_game_data():
         if response.status_code == 200:
             all_game_data = response.json()
             formatted_data = format_game_data(all_game_data)
+            
+            # 为每个玩家添加OP.GG数据
+            if OPGG_AVAILABLE:
+                opgg_api = get_opgg_api()
+                for team in ['teamOrder', 'teamChaos']:
+                    if team in formatted_data:
+                        for player in formatted_data[team]:
+                            champion = player.get('championRaw', '').replace('game_character_displayname_', '')
+                            if champion:
+                                opgg_data = opgg_api.get_champion_stats(champion)
+                                player['opgg'] = opgg_data if opgg_data else None
             
             return jsonify({
                 "success": True,

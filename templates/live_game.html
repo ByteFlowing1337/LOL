@@ -190,6 +190,18 @@
             const deadClass = player.isDead ? 'dead-player' : '';
             const respawnText = player.isDead && player.respawnTimer > 0 ? `<span class="badge bg-danger">复活: ${player.respawnTimer}s</span>` : '';
             
+            // OP.GG数据
+            let opggBadges = '';
+            if (player.opgg) {
+                const tier = player.opgg.tier || 'N/A';
+                const winRate = player.opgg.win_rate ? player.opgg.win_rate.toFixed(1) + '%' : 'N/A';
+                const tierColor = tier === 'S' ? 'success' : tier === 'A' ? 'info' : tier === 'B' ? 'warning' : 'secondary';
+                opggBadges = `
+                    <span class="badge bg-${tierColor}" title="OP.GG Tier评级">T:${tier}</span>
+                    <span class="badge bg-primary" title="当前版本胜率">WR:${winRate}</span>
+                `;
+            }
+            
             return `
                 <div class="player-card card ${currentPlayerClass} ${deadClass} team-${teamSide.toLowerCase()}">
                     <div class="card-body">
@@ -201,6 +213,7 @@
                                      onerror="this.src='https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/29.png'">
                                 <div class="mt-1">
                                     <span class="badge bg-secondary">Lv.${player.level}</span>
+                                    ${opggBadges}
                                 </div>
                             </div>
                             

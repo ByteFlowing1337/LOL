@@ -88,6 +88,30 @@
                     <i class="bi bi-eye-fill me-2"></i>CV视觉检测
                 </h2>
                 
+                <!-- 模式选择 -->
+                <div class="card mb-4" style="background: rgba(255,255,255,0.15); border: none;">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-gear-fill me-2"></i>检测模式
+                        </h5>
+                        <select id="detection-mode-select" class="form-select form-select-lg mb-3" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3);">
+                            <option value="traditional" selected>⚡ 传统CV模式（推荐）</option>
+                            <option value="yolo">🎯 YOLO深度学习模式</option>
+                            <option value="hybrid">🚀 混合模式</option>
+                        </select>
+                        
+                        <!-- 模式说明 -->
+                        <div id="mode-description" class="alert alert-info" style="background: rgba(23, 162, 184, 0.2); border: 1px solid rgba(23, 162, 184, 0.5); color: #fff;">
+                            <small>
+                                <strong>⚡ 传统CV模式</strong><br>
+                                • 速度极快（~50ms）<br>
+                                • 无需模型，立即可用<br>
+                                • 检测：小地图(右下角)、血量、技能CD
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="text-center mb-4">
                     <button id="start-detection-btn" class="btn btn-success control-button">
                         <i class="bi bi-play-circle me-2"></i>开始检测
@@ -103,9 +127,39 @@
                     </button>
                 </div>
                 
+                <!-- 卡牌大师黄牌辅助开关 -->
+                <div class="card mb-4" style="background: linear-gradient(135deg, rgba(243, 156, 18, 0.3) 0%, rgba(230, 126, 34, 0.3) 100%); border: 2px solid rgba(241, 196, 15, 0.5);">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-stars me-2"></i>🃏 卡牌大师黄牌辅助
+                        </h5>
+                        <p class="card-text mb-3">
+                            <small>自动检测并锁定黄牌（秒切黄牌）</small>
+                        </p>
+                        <div class="d-grid">
+                            <button id="tf-toggle-btn" class="btn btn-warning btn-lg" disabled>
+                                <i class="bi bi-toggle-off me-2"></i>启用黄牌辅助
+                            </button>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <small id="tf-toggle-status" class="text-white-50">
+                                💡 请先开始CV检测
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="status-card">
                     <h5><i class="bi bi-activity me-2"></i>检测状态</h5>
                     <p id="detection-status" class="mb-0">未启动</p>
+                    <small id="detection-mode" class="text-muted">等待启动...</small>
+                </div>
+                
+                <!-- 性能统计 -->
+                <div class="status-card mt-3">
+                    <h5><i class="bi bi-speedometer2 me-2"></i>性能</h5>
+                    <p class="mb-1">检测耗时: <span id="detection-time">--</span> ms</p>
+                    <p class="mb-0">检测模式: <span id="current-mode" class="badge bg-info">混合模式</span></p>
                 </div>
                 
                 <!-- 统计信息 -->
@@ -119,6 +173,53 @@
                         <div class="col-6">
                             <div class="stat-number" id="enemy-count">0</div>
                             <small>敌人发现</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 卡牌大师黄牌辅助 -->
+                <div class="status-card mt-3" id="tf-status-card" style="display: none; background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border: 2px solid #f1c40f;">
+                    <h5><i class="bi bi-stars me-2"></i>🃏 卡牌大师 - 黄牌辅助</h5>
+                    <div class="mb-2">
+                        <span class="badge bg-success" id="tf-champion-badge">未选择英雄</span>
+                    </div>
+                    <div class="mb-2">
+                        <small>状态: <span id="tf-status-text" class="text-white fw-bold">待机中</span></small>
+                    </div>
+                    <div class="progress mb-2" style="height: 6px;">
+                        <div id="tf-yellow-progress" class="progress-bar bg-warning" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="text-center">
+                        <small id="tf-helper-text" class="text-white-50">
+                            💡 提示：选择卡牌大师后自动启用黄牌辅助
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- OP.GG英雄数据 -->
+                <div class="status-card mt-3" id="opgg-stats-card" style="display: none; background: linear-gradient(135deg, #5383e8 0%, #7c4dff 100%); border: 2px solid #5383e8;">
+                    <h5><i class="bi bi-graph-up me-2"></i>📊 OP.GG 数据</h5>
+                    <div id="opgg-content">
+                        <div class="row text-center mb-2">
+                            <div class="col-6">
+                                <div class="badge bg-light text-dark mb-1" style="font-size: 1.2rem;" id="opgg-tier">-</div>
+                                <small class="d-block text-white-50">Tier评级</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="badge bg-success mb-1" style="font-size: 1.2rem;" id="opgg-winrate">-</div>
+                                <small class="d-block text-white-50">胜率</small>
+                            </div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <small class="text-white">选取率: <span id="opgg-pickrate" class="fw-bold">-</span></small>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-white">Ban率: <span id="opgg-banrate" class="fw-bold">-</span></small>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-white-50">数据来源: OP.GG Global</small>
                         </div>
                     </div>
                 </div>
@@ -208,15 +309,81 @@
     const startBtn = document.getElementById('start-detection-btn');
     const stopBtn = document.getElementById('stop-detection-btn');
     const screenshotBtn = document.getElementById('screenshot-btn');
+    const tfToggleBtn = document.getElementById('tf-toggle-btn');
+    const tfToggleStatus = document.getElementById('tf-toggle-status');
     const statusText = document.getElementById('detection-status');
     const logContainer = document.getElementById('detection-log');
+    const modeSelect = document.getElementById('detection-mode-select');
+    const modeDescription = document.getElementById('mode-description');
+    
+    // 卡牌辅助状态
+    let tfAssistEnabled = false;
+    
+    // 模式说明
+    const modeDescriptions = {
+        traditional: {
+            title: '⚡ 传统CV模式',
+            features: [
+                '速度极快（~50ms）',
+                '无需模型，立即可用',
+                '检测：小地图(右下角)、血量、技能CD'
+            ],
+            alertClass: 'alert-info'
+        },
+        yolo: {
+            title: '🎯 YOLO深度学习模式',
+            features: [
+                '高精度检测（95%+）',
+                '需要训练模型',
+                '检测：英雄动作、技能指示器'
+            ],
+            alertClass: 'alert-warning'
+        },
+        hybrid: {
+            title: '🚀 混合模式',
+            features: [
+                '性能均衡（~200ms）',
+                '结合两种方法优势',
+                '检测：全面覆盖所有内容'
+            ],
+            alertClass: 'alert-success'
+        }
+    };
+    
+    // 更新模式说明
+    function updateModeDescription() {
+        const mode = modeSelect.value;
+        const desc = modeDescriptions[mode];
+        
+        modeDescription.className = `alert ${desc.alertClass}`;
+        modeDescription.style.background = desc.alertClass === 'alert-info' ? 'rgba(23, 162, 184, 0.2)' : 
+                                          desc.alertClass === 'alert-warning' ? 'rgba(255, 193, 7, 0.2)' :
+                                          'rgba(40, 167, 69, 0.2)';
+        modeDescription.style.border = desc.alertClass === 'alert-info' ? '1px solid rgba(23, 162, 184, 0.5)' :
+                                       desc.alertClass === 'alert-warning' ? '1px solid rgba(255, 193, 7, 0.5)' :
+                                       '1px solid rgba(40, 167, 69, 0.5)';
+        
+        modeDescription.innerHTML = `
+            <small>
+                <strong>${desc.title}</strong><br>
+                ${desc.features.map(f => `• ${f}`).join('<br>')}
+            </small>
+        `;
+    }
+    
+    // 监听模式切换
+    modeSelect.addEventListener('change', updateModeDescription);
     
     // 启动检测
     startBtn.addEventListener('click', () => {
-        socket.emit('start_vision_detection');
+        const selectedMode = modeSelect.value;
+        socket.emit('start_vision_detection', {mode: selectedMode});
         detectionRunning = true;
         startBtn.disabled = true;
+        modeSelect.disabled = true;  // 检测时禁用模式切换
         stopBtn.disabled = false;
+        tfToggleBtn.disabled = false;  // 启用卡牌辅助按钮
+        tfToggleStatus.textContent = '💡 点击按钮启用黄牌辅助';
         statusText.textContent = '检测中...';
         addLog('🎥 CV检测已启动');
     });
@@ -227,8 +394,41 @@
         detectionRunning = false;
         startBtn.disabled = false;
         stopBtn.disabled = true;
+        modeSelect.disabled = false;
+        
+        // 停止卡牌辅助
+        if (tfAssistEnabled) {
+            socket.emit('stop_tf_assist');
+            tfAssistEnabled = false;
+            tfToggleBtn.innerHTML = '<i class="bi bi-toggle-off me-2"></i>启用黄牌辅助';
+            tfToggleBtn.className = 'btn btn-warning btn-lg';
+        }
+        tfToggleBtn.disabled = true;
+        tfToggleStatus.textContent = '💡 请先开始CV检测';
+        
         statusText.textContent = '已停止';
         addLog('⏸️ CV检测已停止');
+    });
+    
+    // 卡牌辅助开关
+    tfToggleBtn.addEventListener('click', () => {
+        tfAssistEnabled = !tfAssistEnabled;
+        
+        if (tfAssistEnabled) {
+            // 启用卡牌辅助
+            socket.emit('start_tf_assist');
+            tfToggleBtn.innerHTML = '<i class="bi bi-toggle-on me-2"></i>停用黄牌辅助';
+            tfToggleBtn.className = 'btn btn-success btn-lg';
+            tfToggleStatus.innerHTML = '✅ 黄牌辅助已启用<br><small>选择卡牌大师后自动激活</small>';
+            addLog('🃏 卡牌大师黄牌辅助已启用');
+        } else {
+            // 停用卡牌辅助
+            socket.emit('stop_tf_assist');
+            tfToggleBtn.innerHTML = '<i class="bi bi-toggle-off me-2"></i>启用黄牌辅助';
+            tfToggleBtn.className = 'btn btn-warning btn-lg';
+            tfToggleStatus.textContent = '⏸️ 黄牌辅助已停用';
+            addLog('🃏 卡牌大师黄牌辅助已停用');
+        }
     });
     
     // 手动截图
@@ -241,6 +441,15 @@
     socket.on('vision_detection_update', (data) => {
         if (data.success) {
             updateDetectionResults(data.data);
+            // 更新检测模式显示
+            if (data.mode) {
+                document.getElementById('current-mode').textContent = data.mode;
+            }
+            // 更新性能统计
+            if (data.data.detection_time) {
+                document.getElementById('detection-time').textContent = 
+                    (data.data.detection_time * 1000).toFixed(0);
+            }
         } else {
             addLog(`❌ 检测错误: ${data.error}`);
         }
@@ -262,56 +471,77 @@
     });
     
     function updateDetectionResults(results) {
-        // 更新英雄抬手
+        // 更新英雄抬手（YOLO检测）
         const castingDiv = document.getElementById('casting-status');
-        if (results.casting.detected) {
+        if (results.casting && results.casting.detected) {
             castingDiv.innerHTML = `
                 <span class="badge casting-indicator">
                     <i class="bi bi-check-circle me-1"></i>检测到抬手动作!
                 </span>
-                <p class="mt-2 mb-0">数量: ${results.casting.count}</p>
+                <p class="mt-2 mb-0">数量: ${results.casting.count || 0}</p>
             `;
         } else {
             castingDiv.innerHTML = '<span class="text-muted">无检测</span>';
         }
         
-        // 更新小地图敌人
+        // 更新小地图敌人（传统CV检测）
         const minimapDiv = document.getElementById('minimap-status');
-        if (results.minimap_enemies.detected) {
+        if (results.minimap_enemies && results.minimap_enemies.detected) {
+            const method = results.minimap_enemies.method || '';
             minimapDiv.innerHTML = `
                 <span class="badge enemy-indicator">
                     <i class="bi bi-exclamation-circle me-1"></i>发现 ${results.minimap_enemies.enemy_count} 个敌人!
                 </span>
+                <small class="d-block mt-1 text-muted">${method}</small>
             `;
         } else {
             minimapDiv.innerHTML = '<span class="text-muted">无敌人</span>';
         }
         
-        // 更新危险信号
+        // 更新危险信号（传统CV检测）
         const dangerDiv = document.getElementById('danger-status');
-        const dangerLevel = results.danger_signals.danger_level;
-        if (dangerLevel !== 'low') {
-            const color = dangerLevel === 'high' ? 'danger' : 'warning';
+        if (results.danger_signals && results.danger_signals.detected) {
             dangerDiv.innerHTML = `
-                <span class="badge bg-${color}">
-                    <i class="bi bi-exclamation-triangle me-1"></i>危险等级: ${dangerLevel.toUpperCase()}
+                <span class="badge danger-indicator">
+                    <i class="bi bi-exclamation-triangle me-1"></i>${results.danger_signals.count} 个危险信号
                 </span>
-                <p class="mt-2 mb-0">检测数: ${results.danger_signals.total_detections}</p>
+                <small class="d-block mt-1 text-muted">${results.danger_signals.method || ''}</small>
             `;
         } else {
             dangerDiv.innerHTML = '<span class="text-success"><i class="bi bi-shield-check me-1"></i>安全</span>';
         }
         
-        // 更新技能指示器
+        // 更新技能指示器（YOLO检测）
         const skillDiv = document.getElementById('skill-status');
-        if (results.skill_indicators.detected) {
+        if (results.skill_indicators && results.skill_indicators.detected) {
             skillDiv.innerHTML = `
                 <span class="badge bg-info">
-                    <i class="bi bi-lightning-charge me-1"></i>检测到 ${results.skill_indicators.skill_count} 个技能
+                    <i class="bi bi-lightning-charge me-1"></i>检测到 ${results.skill_indicators.count} 个技能
                 </span>
             `;
         } else {
             skillDiv.innerHTML = '<span class="text-muted">无技能</span>';
+        }
+        
+        // 更新血量状态（传统CV检测）
+        if (results.health_status) {
+            const healthPercent = (results.health_status.health_percent * 100).toFixed(0);
+            const severity = results.health_status.severity || 'low';
+            const healthColor = severity === 'high' ? 'danger' : severity === 'medium' ? 'warning' : 'success';
+            
+            const healthInfo = document.getElementById('health-info') || document.createElement('div');
+            healthInfo.id = 'health-info';
+            healthInfo.innerHTML = `
+                <div class="mt-2">
+                    <small>血量: <span class="badge bg-${healthColor}">${healthPercent}%</span></small>
+                    ${results.health_status.is_low ? '<small class="text-danger d-block">⚠️ 低血量警告</small>' : ''}
+                </div>
+            `;
+            
+            // 添加到危险信号区域
+            if (!document.getElementById('health-info')) {
+                dangerDiv.appendChild(healthInfo);
+            }
         }
     }
     
@@ -374,6 +604,179 @@
         startBtn.disabled = false;
         stopBtn.disabled = true;
         statusText.textContent = '未连接';
+    });
+    
+    // 卡牌大师相关事件
+    socket.on('champion_changed', (data) => {
+        const tfCard = document.getElementById('tf-status-card');
+        const tfBadge = document.getElementById('tf-champion-badge');
+        const tfStatus = document.getElementById('tf-status-text');
+        const tfHelper = document.getElementById('tf-helper-text');
+        const opggCard = document.getElementById('opgg-stats-card');
+        
+        if (data.tfEnabled && data.champion === 'TwistedFate') {
+            // 显示TF卡片
+            tfCard.style.display = 'block';
+            tfBadge.textContent = '卡牌大师 (TF)';
+            tfBadge.className = 'badge bg-warning';
+            tfStatus.textContent = '黄牌辅助已启用';
+            tfHelper.innerHTML = '💡 按下 <kbd>W</kbd> 键后将自动锁定黄牌';
+            addLog('🃏 检测到卡牌大师，黄牌辅助已启用');
+        } else if (data.champion) {
+            // 其他英雄
+            tfCard.style.display = 'block';
+            tfBadge.textContent = data.champion;
+            tfBadge.className = 'badge bg-secondary';
+            tfStatus.textContent = '该英雄无特殊辅助';
+            tfHelper.textContent = '💡 当前仅支持卡牌大师的黄牌辅助';
+        } else {
+            // 未选择英雄
+            tfCard.style.display = 'none';
+            opggCard.style.display = 'none';
+        }
+        
+        // 显示OP.GG数据
+        if (data.opgg) {
+            updateOPGGStats(data.champion, data.opgg);
+        }
+    });
+    
+    // 更新OP.GG数据显示
+    function updateOPGGStats(championName, opggData) {
+        const opggCard = document.getElementById('opgg-stats-card');
+        const tierElement = document.getElementById('opgg-tier');
+        const winrateElement = document.getElementById('opgg-winrate');
+        const pickrateElement = document.getElementById('opgg-pickrate');
+        const banrateElement = document.getElementById('opgg-banrate');
+        
+        // 显示卡片
+        opggCard.style.display = 'block';
+        
+        // 更新数据
+        const tier = opggData.tier || '-';
+        const winrate = opggData.win_rate || 0;
+        const pickrate = opggData.pick_rate || 0;
+        const banrate = opggData.ban_rate || 0;
+        
+        // 设置Tier颜色
+        const tierColors = {
+            'S': 'danger',
+            'A': 'warning',
+            'B': 'info',
+            'C': 'secondary',
+            'D': 'secondary'
+        };
+        const tierColor = tierColors[tier] || 'secondary';
+        tierElement.className = `badge bg-${tierColor} mb-1`;
+        tierElement.textContent = tier;
+        tierElement.style.fontSize = '1.2rem';
+        
+        // 设置胜率颜色
+        let winrateColor = 'secondary';
+        if (winrate >= 52) winrateColor = 'success';
+        else if (winrate >= 50) winrateColor = 'info';
+        else if (winrate >= 48) winrateColor = 'warning';
+        else winrateColor = 'danger';
+        
+        winrateElement.className = `badge bg-${winrateColor} mb-1`;
+        winrateElement.textContent = winrate.toFixed(1) + '%';
+        winrateElement.style.fontSize = '1.2rem';
+        
+        // 设置其他数据
+        pickrateElement.textContent = pickrate.toFixed(1) + '%';
+        banrateElement.textContent = banrate.toFixed(1) + '%';
+        
+        // 添加日志
+        addLog(`📊 ${championName} OP.GG数据: Tier ${tier}, 胜率 ${winrate.toFixed(1)}%`);
+    }
+    
+    // W键按下事件
+    socket.on('tf_w_key_pressed', (data) => {
+        const tfStatus = document.getElementById('tf-status-text');
+        const tfProgress = document.getElementById('tf-yellow-progress');
+        const tfHelper = document.getElementById('tf-helper-text');
+        
+        tfStatus.textContent = '🔍 检测黄牌中...';
+        tfStatus.className = 'text-warning fw-bold';
+        tfProgress.style.width = '50%';
+        tfProgress.className = 'progress-bar bg-warning progress-bar-striped progress-bar-animated';
+        tfHelper.innerHTML = '⚡ 正在实时监控黄牌出现...';
+        
+        addLog('🃏 ' + (data.message || 'W键已按下，开始监控黄牌'));
+    });
+    
+    socket.on('tf_yellow_card_locked', (data) => {
+        if (data.success) {
+            const tfStatus = document.getElementById('tf-status-text');
+            const tfProgress = document.getElementById('tf-yellow-progress');
+            const tfHelper = document.getElementById('tf-helper-text');
+            
+            // 更新状态
+            tfStatus.textContent = '✅ 黄牌已锁定！';
+            tfStatus.className = 'text-success fw-bold';
+            
+            // 更新进度条
+            const yellowRatio = ((data.yellow_ratio || 0) * 100).toFixed(0);
+            const elapsedTime = ((data.elapsed_time || 0) * 1000).toFixed(0);
+            tfProgress.style.width = '100%';
+            tfProgress.className = 'progress-bar bg-success';
+            
+            // 显示黄牌比例和反应时间
+            tfHelper.innerHTML = `⚡ 黄牌检测率: ${yellowRatio}% | 反应时间: ${elapsedTime}ms`;
+            
+            addLog('🃏✨ ' + (data.message || '黄牌已成功锁定') + ` (反应时间: ${elapsedTime}ms)`);
+            
+            // 播放成功音效（可选）
+            playSuccessSound();
+            
+            // 3秒后重置状态
+            setTimeout(() => {
+                tfStatus.textContent = '等待按W键...';
+                tfStatus.className = 'text-white fw-bold';
+                tfProgress.style.width = '0%';
+                tfProgress.className = 'progress-bar bg-warning';
+                tfHelper.innerHTML = '💡 按下 <kbd>W</kbd> 键后将自动锁定黄牌';
+            }, 3000);
+        }
+    });
+    
+    // 播放成功音效
+    function playSuccessSound() {
+        try {
+            // 使用Web Audio API播放简短的提示音
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800; // 频率
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        } catch (e) {
+            console.log('音效播放失败:', e);
+        }
+    }
+    
+    // 监听W键按下事件（用于测试，实际由pynput监听）
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'w' || e.key === 'W') {
+            const tfCard = document.getElementById('tf-status-card');
+            if (tfCard.style.display !== 'none' && detectionRunning) {
+                const tfStatus = document.getElementById('tf-status-text');
+                tfStatus.textContent = '🔍 检测黄牌中...';
+                tfStatus.className = 'text-warning fw-bold';
+                
+                // 通知后端W键被按下（可选）
+                socket.emit('tf_w_pressed');
+            }
+        }
     });
 </script>
 

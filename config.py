@@ -32,6 +32,7 @@ class AppState:
         self.auto_accept_thread = None
         self.auto_analyze_thread = None
         self.vision_detection_thread = None  # CV检测线程
+        self.tf_detection_thread = None  # 卡牌辅助检测线程
     
     def reset_analysis_state(self):
         """重置分析状态"""
