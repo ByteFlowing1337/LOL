@@ -16,6 +16,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const teammateResultsDiv = document.getElementById('teammate-results-area');
     const enemyResultsDiv = document.getElementById('enemy-results-area'); 
     
+    // --- 辅助函数：跳转到召唤师详情页面 ---
+    function navigateToSummonerDetail() {
+        const summonerName = summonerNameInput.value.trim();
+        if (!summonerName) {
+            resultsDiv.innerHTML = '<p class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>请输入召唤师名称 (格式: 名称#Tag)</p>';
+            return;
+        }
+        
+        // 直接跳转到召唤师详情页面
+        const encodedName = encodeURIComponent(summonerName);
+        window.location.href = `/summoner/${encodedName}`;
+    }
+    
+    // --- 支持回车键快捷查询 ---
+    summonerNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            navigateToSummonerDetail();
+        }
+    });
+    
     // --- 辅助函数: 异步获取单个召唤师的战绩 ---
 async function fetchSummonerStats(gameName, tagLine, displayElement) {
     const apiEndpoint = '/get_history'; 
@@ -255,50 +275,7 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
 
 
     fetchBtn.addEventListener('click', () => {
-        const summonerName = summonerNameInput.value.trim();
-        if (!summonerName) {
-            // LCU Canvas 环境中禁用 alert()，使用更友好的方式显示错误
-            resultsDiv.textContent = '请输入召唤师名称 (格式: 名称#Tag)';
-            resultsDiv.style.color = 'red';
-            return;
-        }
-        resultsDiv.innerHTML = '正在查询...';
-        resultsDiv.style.color = 'black'; // Reset color
-
-        // 核心修复：将名称 URL 编码后，作为查询参数 'name' 传递
-        const encodedName = encodeURIComponent(summonerName);
-        const fetchUrl = `/get_history?name=${encodedName}`;
-
-        fetch(fetchUrl) 
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    let html = '<h3>最近战绩:</h3>';
-                    data.games.forEach(game => {
-                        const resultClass = game.win ? 'win-text' : 'loss-text'; // 假设 CSS 中有这两个类
-                        const resultText = game.win ? '胜利' : '失败';
-                        // 使用 DDragon 最新版本路径
-                        html += `
-                            <p class="game-item ${resultClass}">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${game.champion_en}.png" 
-                                     alt="${game.champion_en}" width="32" style="vertical-align: middle; border-radius: 50%;">
-                                <strong>${game.champion_en}</strong> | 
-                                KDA: ${game.kda} | 
-                                <span class="${resultClass} font-bold">${resultText}</span> (${game.gameMode})
-                            </p>
-                        `;
-                    });
-                    resultsDiv.innerHTML = html;
-                } else {
-                    resultsDiv.textContent = `查询失败: ${data.message}`;
-                    resultsDiv.style.color = 'red';
-                }
-            })
-            .catch(error => {
-                resultsDiv.textContent = `请求失败: 服务器连接错误或JSON解析失败。`;
-                resultsDiv.style.color = 'red';
-                console.error("Fetch Error:", error);
-            });
+        navigateToSummonerDetail();
     });
     
     autoAcceptBtn.addEventListener('click', () => {
