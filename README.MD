@@ -67,7 +67,7 @@ A minimal GitHub Actions workflow is included at `.github/workflows/ci.yml`. It 
 
 ## License
 
-MIT — see `RELEASE_README.txt` for release notes.
+MIT — see `LICENSE` for release notes.
 
 
 If you'd like a localized Chinese-only README or a longer English README with screenshots and demos, I can expand this further.
