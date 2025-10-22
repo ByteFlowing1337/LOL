@@ -8,7 +8,6 @@ import lcu_api
 from constants import CHAMPION_MAP
 from utils.game_data_formatter import format_game_data
 import requests
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
