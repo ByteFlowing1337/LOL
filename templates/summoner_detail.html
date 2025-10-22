@@ -202,19 +202,7 @@
             const [kills, deaths, assists] = game.kda.split('/');
             const kda = deaths > 0 ? ((parseInt(kills) + parseInt(assists)) / parseInt(deaths)).toFixed(2) : 'Perfect';
             
-            // OP.GG数据
-            let opggBadge = '';
-            if (game.opgg) {
-                const tier = game.opgg.tier || 'N/A';
-                const winRate = game.opgg.win_rate ? game.opgg.win_rate.toFixed(1) + '%' : 'N/A';
-                const tierColor = tier === 'S' ? 'success' : tier === 'A' ? 'info' : tier === 'B' ? 'warning' : 'secondary';
-                opggBadge = `
-                    <div class="mt-1">
-                        <span class="badge bg-${tierColor}" title="OP.GG Tier评级">Tier ${tier}</span>
-                        <span class="badge bg-primary" title="当前版本胜率">胜率 ${winRate}</span>
-                    </div>
-                `;
-            }
+            // OP.GG integration removed: no external badges
 
             return `
                 <div class="card game-card ${winClass}">
@@ -226,7 +214,7 @@
                                      alt="${game.champion_en}" 
                                      class="champion-icon mb-2">
                                 <h6 class="mb-0">${game.champion_en}</h6>
-                                ${opggBadge}
+                                
                             </div>
 
                             <!-- 中间：战绩数据 -->

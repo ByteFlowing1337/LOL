@@ -74,19 +74,7 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
             const resultClass = lastGame.win ? 'text-success fw-bold' : 'text-danger fw-bold';
             const winRateClass = winRate >= 60 ? 'text-success' : winRate >= 50 ? 'text-warning' : 'text-danger';
             
-            // OP.GG数据
-            let opggInfo = '';
-            if (lastGame.opgg) {
-                const tier = lastGame.opgg.tier || 'N/A';
-                const champWinRate = lastGame.opgg.win_rate ? lastGame.opgg.win_rate.toFixed(1) + '%' : 'N/A';
-                const tierColor = tier === 'S' ? 'success' : tier === 'A' ? 'info' : tier === 'B' ? 'warning' : 'secondary';
-                opggInfo = `
-                    <div class="mt-1">
-                        <span class="badge bg-${tierColor}" style="font-size: 0.75em;" title="OP.GG Tier评级">Tier ${tier}</span>
-                        <span class="badge bg-primary" style="font-size: 0.75em;" title="该英雄当前版本胜率">胜率 ${champWinRate}</span>
-                    </div>
-                `;
-            }
+            // OP.GG integration removed: no external stats will be shown here.
             
             displayElement.innerHTML = `
                 <div class="small mt-1">
@@ -105,7 +93,6 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
                              height="20"
                              style="vertical-align: middle; border-radius: 3px;">
                         ${lastGame.champion_en} | ${lastGame.kda}
-                        ${opggInfo}
                     </div>
                 </div>
             `;

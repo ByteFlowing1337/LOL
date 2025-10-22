@@ -12,13 +12,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 导入OP.GG API
-try:
-    from services.opgg_api import get_opgg_api, get_english_champion_name
-    OPGG_AVAILABLE = True
-except ImportError:
-    OPGG_AVAILABLE = False
-    print("⚠️ OP.GG API不可用")
+# OP.GG integration has been removed from this build.
+OPGG_AVAILABLE = False
 
 # 创建蓝图
 api_bp = Blueprint('api', __name__)
@@ -120,10 +115,7 @@ def get_history():
     # 处理数据
     processed_games = _process_match_history(history)
     
-    # 🚀 并发查询OP.GG数据（性能优化）
-    if OPGG_AVAILABLE:
-        opgg_api = get_opgg_api()
-        _add_opgg_data_concurrent(processed_games, opgg_api)
+    # OP.GG integration removed: processed_games contains core match info only.
     
     return jsonify({
         "success": True, 
@@ -131,42 +123,7 @@ def get_history():
     })
 
 
-def _add_opgg_data_concurrent(games_list, opgg_api):
-    """
-    并发获取OP.GG数据并添加到游戏列表
-    
-    Args:
-        games_list: 游戏列表
-        opgg_api: OP.GG API实例
-    """
-    def fetch_single_opgg(game):
-        """单个游戏的OP.GG数据获取"""
-        champion_en = game.get('champion_en', '')
-        if champion_en:
-            try:
-                return opgg_api.get_champion_stats(champion_en)
-            except Exception as e:
-                print(f"⚠️ 获取 {champion_en} OP.GG数据失败: {e}")
-                return None
-        return None
-    
-    # 使用线程池并发查询（最多10个并发）
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        # 提交所有任务
-        future_to_game = {
-            executor.submit(fetch_single_opgg, game): game 
-            for game in games_list
-        }
-        
-        # 收集结果
-        for future in as_completed(future_to_game):
-            game = future_to_game[future]
-            try:
-                opgg_data = future.result()
-                game['opgg'] = opgg_data if opgg_data else None
-            except Exception as e:
-                print(f"⚠️ OP.GG并发查询异常: {e}")
-                game['opgg'] = None
+# OP.GG helper removed.
 
 
 @api_bp.route('/get_live_game_data', methods=['GET'])
@@ -186,38 +143,7 @@ def get_live_game_data():
             all_game_data = response.json()
             formatted_data = format_game_data(all_game_data)
             
-            # 🚀 并发为每个玩家添加OP.GG数据
-            if OPGG_AVAILABLE:
-                opgg_api = get_opgg_api()
-                
-                # 收集所有玩家数据
-                all_players = []
-                for team in ['teamOrder', 'teamChaos']:
-                    if team in formatted_data:
-                        all_players.extend(formatted_data[team])
-                
-                # 并发查询OP.GG数据
-                def fetch_player_opgg(player):
-                    champion = player.get('championRaw', '').replace('game_character_displayname_', '')
-                    if champion:
-                        try:
-                            return opgg_api.get_champion_stats(champion)
-                        except:
-                            return None
-                    return None
-                
-                with ThreadPoolExecutor(max_workers=10) as executor:
-                    future_to_player = {
-                        executor.submit(fetch_player_opgg, player): player
-                        for player in all_players
-                    }
-                    
-                    for future in as_completed(future_to_player):
-                        player = future_to_player[future]
-                        try:
-                            player['opgg'] = future.result()
-                        except:
-                            player['opgg'] = None
+            # OP.GG integration removed: returning formatted game data without external stats.
             
             return jsonify({
                 "success": True,
@@ -296,8 +222,7 @@ def _format_game_mode(mode):
 
 def _calculate_time_ago(timestamp_ms):
     """计算时间差"""
-    import time
-    from datetime import datetime, timedelta
+    from datetime import datetime
     
     if not timestamp_ms:
         return '未知时间'

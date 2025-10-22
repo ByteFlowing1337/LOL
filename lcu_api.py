@@ -87,7 +87,7 @@ def extract_params_from_log(log_file, status_bar):
                 status_bar.showMessage(f"成功提取参数：Token={token[:8]}..., Port={port}")
                 return token, port
             else:
-                status_bar.showMessage(f"在日志文件中未找到所需的 --remoting-auth-token 或 --app-port 参数。")
+                status_bar.showMessage("在日志文件中未找到所需的 --remoting-auth-token 或 --app-port 参数。")
                 return None, None
                 
     except FileNotFoundError:
@@ -182,7 +182,7 @@ def make_request(method, endpoint, token, port, **kwargs):
         print(f"LCU API 请求失败 ({method} {endpoint}): {e.response.status_code} {e.response.reason}")
         # 打印 403 错误的详细信息
         if e.response.status_code == 403:
-            print(f"!!! 权限拒绝 (403 Forbidden) !!! 可能原因: LCU 客户端限制或当前游戏状态不允许查询。")
+            print("!!! 权限拒绝 (403 Forbidden) !!! 可能原因: LCU 客户端限制或当前游戏状态不允许查询。")
             
         print(f"响应内容: {e.response.text}")
         return None

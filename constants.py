@@ -1,4 +1,5 @@
-import winreg,os
+import winreg
+import os
 
 # --- LCU 根路径查找函数 ---
 
