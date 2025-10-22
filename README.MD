@@ -1,5 +1,5 @@
 <!-- Badges -->
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./RELEASE_README.txt) [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![CI](https://github.com/ByteFlowing1337/LOL/actions/workflows/ci.yml/badge.svg)](https://github.com/ByteFlowing1337/LOL/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE) [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![CI](https://github.com/ByteFlowing1337/LOL/actions/workflows/ci.yml/badge.svg)](https://github.com/ByteFlowing1337/LOL/actions)
 
 # LOLHelper WebUI
 
