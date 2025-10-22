@@ -51,11 +51,17 @@ def register_socket_events(socketio):
     def handle_start_auto_accept():
         """启动自动接受对局"""
         with thread_lock:
+            # Require LCU connection before starting auto-accept
+            if not app_state.is_lcu_connected():
+                emit('status_update', {'message': '❌ 无法启动自动接受：未连接到LCU'})
+                print("❌ 尝试启动自动接受失败：LCU 未连接")
+                return
+
             if app_state.auto_accept_thread is None or not app_state.auto_accept_thread.is_alive():
                 app_state.auto_accept_enabled = True
                 app_state.auto_accept_thread = threading.Thread(
-                    target=auto_accept_task, 
-                    args=(socketio,), 
+                    target=auto_accept_task,
+                    args=(socketio,),
                     daemon=True
                 )
                 app_state.auto_accept_thread.start()
@@ -68,11 +74,17 @@ def register_socket_events(socketio):
     def handle_start_auto_analyze():
         """启动敌我分析"""
         with thread_lock:
+            # Require LCU connection before starting auto-analyze
+            if not app_state.is_lcu_connected():
+                emit('status_update', {'message': '❌ 无法启动敌我分析：未连接到LCU'})
+                print("❌ 尝试启动敌我分析失败：LCU 未连接")
+                return
+
             if app_state.auto_analyze_thread is None or not app_state.auto_analyze_thread.is_alive():
                 app_state.auto_analyze_enabled = True
                 app_state.auto_analyze_thread = threading.Thread(
-                    target=auto_analyze_task, 
-                    args=(socketio,), 
+                    target=auto_analyze_task,
+                    args=(socketio,),
                     daemon=True
                 )
                 app_state.auto_analyze_thread.start()
@@ -81,49 +93,9 @@ def register_socket_events(socketio):
             else:
                 emit('status_update', {'message': '⚠️ 敌我分析功能已在运行中'})
     
-    # Vision detection functionality removed. Socket events related to vision are no-ops.
+ 
     
-    # stop_vision_detection removed
-    
-    # start_tf_assist removed (depends on vision stack)
-    
-    # stop_tf_assist removed
-    
-    @socketio.on('capture_screenshot')
-    def handle_capture_screenshot():
-        """手动截图"""
-        print("📸 收到截图请求")
-        socketio.start_background_task(capture_screenshot_task, socketio)
-    
-    @socketio.on('tf_set_champion')
-    def handle_tf_set_champion(data):
-        """
-        设置当前英雄（用于卡牌大师检测）
-        
-        Args:
-            data: {'champion': 'TwistedFate'}
-        """
-        try:
-            from services.tf_card_selector import get_tf_selector
-            champion = data.get('champion', '')
-            selector = get_tf_selector()
-            selector.set_champion(champion)
-            emit('status_update', {'message': f'🃏 已设置英雄: {champion}'})
-            print(f"🃏 卡牌大师选择器: 英雄设置为 {champion}")
-        except Exception as e:
-            print(f"❌ 设置英雄失败: {e}")
-    
-    @socketio.on('tf_w_pressed')
-    def handle_tf_w_pressed():
-        """W键按下事件"""
-        try:
-            from services.tf_card_selector import get_tf_selector
-            selector = get_tf_selector()
-            selector.on_w_pressed()
-            emit('status_update', {'message': '🎯 W键按下，监控黄牌中...'})
-            print("🎯 卡牌大师选择器: W键已按下")
-        except Exception as e:
-            print(f"❌ W键事件处理失败: {e}")
+
 
 
 def _detect_and_connect_lcu(socketio, status_proxy):

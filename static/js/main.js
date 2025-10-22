@@ -278,7 +278,20 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
         navigateToSummonerDetail();
     });
     
+    function isLCUConnected() {
+        const statusEl = document.getElementById('lcu-status');
+        if (!statusEl) return false;
+        const txt = (statusEl.textContent || '').toLowerCase();
+        // consider connected if text mentions success or connected
+        return txt.includes('成功') || txt.includes('已连接') || txt.includes('连接成功');
+    }
+
     autoAcceptBtn.addEventListener('click', () => {
+        if (!isLCUConnected()) {
+            alert('无法启动自动接受：未检测到LCU连接， 请先确保客户端已运行并且LCU已连接。');
+            return;
+        }
+
         socket.emit('start_auto_accept');
         autoAcceptBtn.disabled = true;
         autoAcceptBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> 运行中...';
@@ -287,6 +300,11 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
     });
     
     autoAnalyzeBtn.addEventListener('click', () => {
+        if (!isLCUConnected()) {
+            alert('无法启动敌我分析：未检测到LCU连接， 请先确保客户端已运行并且LCU已连接。');
+            return;
+        }
+
         socket.emit('start_auto_analyze');
         autoAnalyzeBtn.disabled = true;
         autoAnalyzeBtn.innerHTML = '<i class="bi bi-bar-chart-fill me-1"></i> 运行中...';

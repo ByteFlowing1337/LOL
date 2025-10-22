@@ -12,27 +12,30 @@ PORT = 5000
 class AppState:
     """应用全局状态管理"""
     def __init__(self):
+        from typing import Any
+        from threading import Thread
+
         # 功能开关
-        self.auto_accept_enabled = False
-        self.auto_analyze_enabled = False
-        self.vision_detection_enabled = False  # CV检测开关
-        
+        self.auto_accept_enabled: bool = False
+        self.auto_analyze_enabled: bool = False
+        self.vision_detection_enabled: bool = False  # CV检测开关
+
         # 分析状态
-        self.teammate_analysis_done = False
-        self.enemy_analysis_done = False
-        self.current_teammates = set()
-        
-        # LCU凭证
-        self.lcu_credentials = {
+        self.teammate_analysis_done: bool = False
+        self.enemy_analysis_done: bool = False
+        self.current_teammates: set = set()
+
+        # LCU凭证 (auth_token may be str or None; app_port may be int or None)
+        self.lcu_credentials: dict[str, Any] = {
             "auth_token": None,
             "app_port": None
         }
-        
+
         # 线程引用
-        self.auto_accept_thread = None
-        self.auto_analyze_thread = None
-        self.vision_detection_thread = None  # CV检测线程
-        self.tf_detection_thread = None  # 卡牌辅助检测线程
+        self.auto_accept_thread: 'Thread | None' = None
+        self.auto_analyze_thread: 'Thread | None' = None
+        self.vision_detection_thread: 'Thread | None' = None  # CV检测线程
+        self.tf_detection_thread: 'Thread | None' = None  # 卡牌辅助检测线程
     
     def reset_analysis_state(self):
         """重置分析状态"""
