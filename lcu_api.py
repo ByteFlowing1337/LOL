@@ -6,7 +6,6 @@ import json
 import datetime
 import chardet
 import psutil
-from time import sleep 
 # 假设 LOG_DIR, constants 等在其他文件中定义，这里只保留需要的导入
 from constants import LOG_DIR 
 import urllib3
@@ -136,6 +135,13 @@ def autodetect_credentials(status_bar):
 def make_request(method, endpoint, token, port, **kwargs):
     """
     统一的 LCU API 请求封装，处理认证和 SSL 验证。
+    
+    Args:
+        method: HTTP方法
+        endpoint: API端点
+        token: 认证令牌
+        port: 端口
+        **kwargs: 其他请求参数（可包含自定义timeout）
     """
     url = f"https://127.0.0.1:{port}{endpoint}"
     # LCU 认证要求使用 HTTPBasicAuth，用户名是 'riot'
@@ -150,13 +156,17 @@ def make_request(method, endpoint, token, port, **kwargs):
         kwargs['headers'] = kwargs.get('headers', {})
         kwargs['headers']['Content-Type'] = 'application/json'
 
+    # 🚀 动态timeout：如果没有指定，则使用默认值5秒
+    # 大数据量查询（如战绩）会在调用时传入更大的timeout
+    if 'timeout' not in kwargs:
+        kwargs['timeout'] = 5
+
     try:
         response = requests.request(
             method,
             url,
             auth=auth,
             verify=False,  # 忽略SSL证书错误
-            timeout=15,
             **kwargs
         )
         
@@ -226,21 +236,40 @@ def get_puuid(token, port, summoner_name):
         return data.get('puuid')
     return None
 
-def get_match_history(token, port, puuid):
+def get_match_history(token, port, puuid, count=100):
     """
     通过 PUUID 获取比赛历史记录。
+    
+    Args:
+        token: LCU认证令牌
+        port: LCU端口
+        puuid: 玩家PUUID
+        count: 查询数量 (默认100场，最大值通常为200)
+    
+    Returns:
+        dict: 战绩数据
     """
     # LCU API 战绩查询端点，PUUID 在路径中
     endpoint = f"/lol-match-history/v1/products/lol/{puuid}/matches"
     
-    # *** 修复 400 Bad Request 错误：移除 LCU 不再支持的 'beginIndex' 参数 ***
+    # 🚀 动态timeout：根据查询数量调整超时时间
+    # 经验值：每100场约需5秒，基础5秒 + 额外时间
+    timeout = 5 + (count // 50) * 3  # 50场+3秒，100场+6秒，200场+12秒
+    timeout = min(timeout, 20)  # 最大20秒，避免等待过久
+    
+    print(f"📊 查询 {count} 场战绩，timeout={timeout}秒")
+    
+    # 🚀 优化：增加查询数量到100场（原来只有15场）
+    # LCU API 支持的最大值通常为 200，这里设置为 100 平衡性能和数据量
     return make_request(
         "GET",
         endpoint,
         token,
         port,
-        params={'endIndex': 15} # 仅保留 endIndex，限制查询最近5场比赛
+        params={ 'endIndex': count},  # 查询从0到count的战绩
+        timeout=timeout  # 传入动态timeout
     )
+
 # --- 游戏内对局信息API（端口2999）---
 
 def get_live_game_data():
@@ -378,9 +407,7 @@ def get_all_players_from_game(token, port):
             else:
                 enemy_list.append(player_info)
                 print(f"💥 敌人: {summoner_name} ({player.get('championName', '未知')}) [队伍: {player_team}]")
-            
-            # 避免请求过快
-            sleep(0.01)
+
         
         print(f"✅ 成功获取 {len(teammate_list)} 名队友 ({my_team_side}) 和 {len(enemy_list)} 名敌人")
         
@@ -447,8 +474,7 @@ def get_enemy_stats(token, port):
             'level': player.get('level', 0)
         })
         
-        # 避免请求过快
-        sleep(0.05)
+   
     
     return enemy_stats
 

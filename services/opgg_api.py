@@ -28,7 +28,7 @@ class OPGGApi:
         
         # 缓存机制：避免频繁请求
         self.cache = {}
-        self.cache_ttl = 1800  # 30分钟缓存（减少API调用）
+        self.cache_ttl = 600  # 🚀 优化: 缓存时间从30分钟减少到10分钟，平衡数据新鲜度和性能
         
         # 英雄ID映射缓存
         self.champion_id_map = None
@@ -91,7 +91,7 @@ class OPGGApi:
         """获取最新的Data Dragon版本"""
         try:
             url = "https://ddragon.leagueoflegends.com/api/versions.json"
-            response = self.session.get(url, timeout=3)
+            response = self.session.get(url, timeout=2)  # 🚀 优化: 降低timeout到2秒
             if response.status_code == 200:
                 versions = response.json()
                 self.ddragon_version = versions[0] if versions else self.ddragon_version
@@ -108,7 +108,7 @@ class OPGGApi:
         try:
             version = self._get_latest_version()
             url = f"{self.ddragon_base}/cdn/{version}/data/en_US/champion.json"
-            response = self.session.get(url, timeout=5)
+            response = self.session.get(url, timeout=3)  # 🚀 优化: 降低timeout到3秒
             
             if response.status_code == 200:
                 data = response.json()
@@ -118,7 +118,7 @@ class OPGGApi:
                 }
                 return self.champion_id_map
         except Exception as e:
-            print(f"⚠️ 获取英雄映射失败: {e}")
+            pass
         
         return {}
     
@@ -149,7 +149,7 @@ class OPGGApi:
             # 检查缓存
             cache_key = self._get_cache_key(champion_name, region)
             if self._is_cache_valid(cache_key):
-                print(f"✅ 从缓存获取 {champion_name} 数据")
+                # 缓存命中，直接返回
                 return self.cache[cache_key]
             
             # 尝试多个数据源（按优先级）
@@ -164,7 +164,6 @@ class OPGGApi:
             
             # 方法3: 返回默认数据
             if not stats:
-                print(f"⚠️ 使用默认数据: {champion_name}")
                 stats = self._get_default_stats(champion_name, role)
             
             # 缓存数据
@@ -174,7 +173,7 @@ class OPGGApi:
             return stats
             
         except Exception as e:
-            print(f"❌ 获取数据失败: {e}")
+            # 静默失败，返回默认数据
             return self._get_default_stats(champion_name, role)
     
     def _get_from_stats_db(self, champion_name):
@@ -188,7 +187,6 @@ class OPGGApi:
             stats['role'] = 'all'
             stats['source'] = 'database'
             stats['timestamp'] = time.time()
-            print(f"✅ 从数据库获取 {champion_name} 数据")
             return stats
         return None
     
@@ -203,7 +201,6 @@ class OPGGApi:
             champion_id = champ_id_map.get(champion_name)
             
             if not champion_id:
-                print(f"⚠️ 找不到英雄ID: {champion_name}")
                 return None
             
             # U.GG API端点
@@ -219,16 +216,14 @@ class OPGGApi:
                 'patch': '14_1'
             }
             
-            response = self.session.get(url, params=params, timeout=5)
+            response = self.session.get(url, params=params, timeout=2)  # 🚀 优化: 降低timeout到2秒
             
             if response.status_code == 200:
                 data = response.json()
                 return self._parse_ugg_response(data, champion_name)
-            else:
-                print(f"⚠️ U.GG API返回状态码: {response.status_code}")
             
         except Exception as e:
-            print(f"⚠️ U.GG API请求失败: {e}")
+            pass
         
         return None
     
@@ -245,14 +240,14 @@ class OPGGApi:
                 'tier': 'platinum_plus'
             }
             
-            response = self.session.get(url, params=params, timeout=5)
+            response = self.session.get(url, params=params, timeout=2)  # 🚀 优化: 降低timeout到2秒
             
             if response.status_code == 200:
                 data = response.json()
                 return self._parse_opgg_response(data, champion_name)
             
         except Exception as e:
-            print(f"⚠️ OP.GG API请求失败: {e}")
+            pass
         
         return None
     
@@ -266,7 +261,7 @@ class OPGGApi:
             version = self._get_latest_version()
             url = f"{self.ddragon_base}/cdn/{version}/data/en_US/champion/{champion_name}.json"
             
-            response = self.session.get(url, timeout=5)
+            response = self.session.get(url, timeout=2)  # 🚀 优化: 降低timeout到2秒
             
             if response.status_code == 200:
                 data = response.json()
@@ -309,7 +304,7 @@ class OPGGApi:
                 }
         
         except Exception as e:
-            print(f"⚠️ 估算数据生成失败: {e}")
+            pass
         
         return None
     
@@ -359,7 +354,7 @@ class OPGGApi:
                     'timestamp': time.time()
                 }
         except Exception as e:
-            print(f"⚠️ 解析U.GG数据失败: {e}")
+            pass
         
         return None
     
@@ -396,7 +391,7 @@ class OPGGApi:
                 'timestamp': time.time()
             }
         except Exception as e:
-            print(f"⚠️ 解析OP.GG数据失败: {e}")
+            pass
         
         return None
     
@@ -445,7 +440,7 @@ class OPGGApi:
             encoded_name = requests.utils.quote(summoner_name)
             url = f"{self.base_url}/summoners/{region}/{encoded_name}"
             
-            response = self.session.get(url, timeout=5)
+            response = self.session.get(url, timeout=2)  # 🚀 优化: 降低timeout到2秒
             
             if response.status_code != 200:
                 return None
@@ -463,9 +458,8 @@ class OPGGApi:
                 'source': 'opgg',
                 'timestamp': time.time()
             }
-            
+        
         except Exception as e:
-            print(f"❌ 获取召唤师数据失败: {e}")
             return None
     
     def get_champion_counters(self, champion_name):
@@ -487,7 +481,6 @@ class OPGGApi:
                 'timestamp': time.time()
             }
         except Exception as e:
-            print(f"❌ 获取克制数据失败: {e}")
             return None
 
 
@@ -568,9 +561,7 @@ if __name__ == '__main__':
         else:
             print(f"   ❌ 获取失败")
         
-        # 避免请求过快
-        if i < len(test_champions):
-            time.sleep(0.5)
+
     
     print("\n" + "=" * 70)
     print("✅ 测试完成")
