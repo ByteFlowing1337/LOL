@@ -3,8 +3,8 @@
 # 键盘监控和控制
 pynput>=1.7.0
 
-# 图像处理和计算机视觉
-opencv-python>=4.8.0
+# 图像处理和数值计算（CV removed from project)
+# numpy is still useful for other tasks
 numpy>=1.24.0
 
 # 屏幕截图
@@ -21,9 +21,7 @@ requests>=2.31.0
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
 
-# 内存读取（需要管理员权限）
-pymem>=1.13.0
+# memory-reading removed from project
+# pymem removed
 
-# 可选：YOLO深度学习（如果使用YOLO模式）
-# ultralytics>=8.0.0
-# torch>=2.0.0
+# YOLO-related tooling removed

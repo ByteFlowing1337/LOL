@@ -5,7 +5,15 @@ import threading
 from flask_socketio import emit
 from config import app_state
 from services import auto_accept_task, auto_analyze_task
-from services.vision_service import vision_detection_task, capture_screenshot_task
+try:
+    # vision-related services were removed; provide no-op placeholders to keep imports safe
+    from services.vision_service import vision_detection_task, capture_screenshot_task  # type: ignore
+except Exception:
+    def vision_detection_task(*args, **kwargs):
+        print("vision_detection_task is not available (feature removed)")
+
+    def capture_screenshot_task(*args, **kwargs):
+        print("capture_screenshot_task is not available (feature removed)")
 import lcu_api
 
 
@@ -73,175 +81,13 @@ def register_socket_events(socketio):
             else:
                 emit('status_update', {'message': '⚠️ 敌我分析功能已在运行中'})
     
-    @socketio.on('start_vision_detection')
-    def handle_start_vision_detection(data=None):
-        """
-        启动CV视觉检测
-        
-        Args:
-            data: 包含mode参数的字典 {'mode': 'traditional'/'yolo'/'hybrid'}
-        """
-        with thread_lock:
-            if app_state.vision_detection_thread is None or not app_state.vision_detection_thread.is_alive():
-                app_state.vision_detection_enabled = True
-                
-                # 从data中获取mode，默认为traditional
-                mode = 'traditional'
-                if data and isinstance(data, dict):
-                    mode = data.get('mode', 'traditional')
-                
-                # 确定模式名称和描述
-                mode_info = {
-                    'traditional': {
-                        'name': '传统CV模式',
-                        'icon': '⚡',
-                        'desc': '基于OpenCV，检测小地图(右下角)、血量、技能CD'
-                    },
-                    'yolo': {
-                        'name': 'YOLO深度学习模式',
-                        'icon': '🎯',
-                        'desc': '基于YOLO模型，检测英雄动作、技能指示器'
-                    },
-                    'hybrid': {
-                        'name': '混合模式',
-                        'icon': '🚀',
-                        'desc': '结合传统CV和YOLO优势'
-                    }
-                }
-                
-                info = mode_info.get(mode, mode_info['traditional'])
-                
-                app_state.vision_detection_thread = threading.Thread(
-                    target=vision_detection_task,
-                    args=(socketio,),
-                    kwargs={'mode': mode},  # 传递模式参数
-                    daemon=True
-                )
-                app_state.vision_detection_thread.start()
-                
-                message = f'{info["icon"]} CV视觉检测已开启 ({info["name"]})'
-                emit('status_update', {'message': message})
-                print(f"\n{'=' * 60}")
-                print(f"🎥 CV视觉检测功能已启动")
-                print(f"📋 模式: {info['name']}")
-                print(f"📝 说明: {info['desc']}")
-                print(f"{'=' * 60}\n")
-            else:
-                emit('status_update', {'message': '⚠️ CV检测已在运行中'})
+    # Vision detection functionality removed. Socket events related to vision are no-ops.
     
-    @socketio.on('stop_vision_detection')
-    def handle_stop_vision_detection():
-        """停止CV视觉检测"""
-        app_state.vision_detection_enabled = False
-        
-        # 停止卡牌辅助
-        try:
-            from services.tf_card_selector import get_tf_selector
-            selector = get_tf_selector()
-            if selector.is_enabled:
-                selector.stop_keyboard_listener()
-                selector.is_enabled = False
-                print("🃏 卡牌辅助已停止")
-        except Exception as e:
-            print(f"⚠️ 停止卡牌辅助时出错: {e}")
-        
-        # 停止英雄监控
-        try:
-            from services.champion_monitor import get_champion_monitor
-            champion_monitor = get_champion_monitor()
-            if champion_monitor.is_monitoring:
-                champion_monitor.stop_monitoring()
-                print("👀 英雄监控已停止")
-        except Exception as e:
-            print(f"⚠️ 停止英雄监控时出错: {e}")
-        
-        emit('status_update', {'message': '⏸️ CV视觉检测已停止'})
-        print("🎥 CV视觉检测已停止")
+    # stop_vision_detection removed
     
-    @socketio.on('start_tf_assist')
-    def handle_start_tf_assist():
-        """启动卡牌大师黄牌辅助"""
-        with thread_lock:
-            try:
-                from services.tf_card_selector import get_tf_selector
-                from services.champion_monitor import get_champion_monitor
-                from services.vision_service import _tf_card_detection_loop
-                
-                # 检查CV检测是否运行
-                if not app_state.vision_detection_enabled:
-                    emit('status_update', {'message': '⚠️ 请先启动CV检测'})
-                    return
-                
-                # 获取卡牌选择器
-                selector = get_tf_selector()
-                
-                # 启动英雄监控
-                champion_monitor = get_champion_monitor()
-                champion_monitor.set_tf_selector(selector)
-                
-                # 添加英雄改变回调
-                def on_champion_change(champion_name, champion_id, opgg_data=None):
-                    data = {
-                        'champion': champion_name,
-                        'championId': champion_id,
-                        'tfEnabled': champion_name == 'TwistedFate'
-                    }
-                    
-                    # 添加OP.GG数据
-                    if opgg_data:
-                        data['opgg'] = opgg_data
-                    
-                    socketio.emit('champion_changed', data)
-                
-                champion_monitor.add_champion_change_callback(on_champion_change)
-                champion_monitor.start_monitoring()
-                
-                # 启动卡牌检测线程
-                if not hasattr(app_state, 'tf_detection_thread') or \
-                   app_state.tf_detection_thread is None or \
-                   not app_state.tf_detection_thread.is_alive():
-                    app_state.tf_detection_thread = threading.Thread(
-                        target=_tf_card_detection_loop,
-                        args=(selector, socketio),
-                        daemon=True
-                    )
-                    app_state.tf_detection_thread.start()
-                    print("🃏 卡牌大师高频检测线程已启动（50ms间隔）")
-                
-                emit('status_update', {'message': '🃏 卡牌大师黄牌辅助已启用'})
-                print("🃏 卡牌大师黄牌辅助已启用")
-                print("👀 英雄自动监控已启动")
-                
-            except Exception as e:
-                emit('status_update', {'message': f'❌ 启动卡牌辅助失败: {e}'})
-                print(f"❌ 启动卡牌辅助失败: {e}")
-                import traceback
-                traceback.print_exc()
+    # start_tf_assist removed (depends on vision stack)
     
-    @socketio.on('stop_tf_assist')
-    def handle_stop_tf_assist():
-        """停止卡牌大师黄牌辅助"""
-        try:
-            from services.tf_card_selector import get_tf_selector
-            from services.champion_monitor import get_champion_monitor
-            
-            # 停止选择器
-            selector = get_tf_selector()
-            selector.stop_keyboard_listener()
-            selector.is_enabled = False
-            selector.current_champion = None
-            
-            # 停止监控
-            champion_monitor = get_champion_monitor()
-            if champion_monitor.is_monitoring:
-                champion_monitor.stop_monitoring()
-            
-            emit('status_update', {'message': '🃏 卡牌大师黄牌辅助已停用'})
-            print("🃏 卡牌大师黄牌辅助已停用")
-            
-        except Exception as e:
-            emit('status_update', {'message': f'❌ 停止卡牌辅助失败: {e}'})
-            print(f"❌ 停止卡牌辅助失败: {e}")
+    # stop_tf_assist removed
     
     @socketio.on('capture_screenshot')
     def handle_capture_screenshot():

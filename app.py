@@ -12,14 +12,6 @@ from routes import api_bp
 from websocket import register_socket_events
 from utils import get_local_ip
 
-# 尝试导入内存读取API
-try:
-    from routes.memory_routes import memory_bp
-    MEMORY_API_AVAILABLE = True
-except ImportError:
-    MEMORY_API_AVAILABLE = False
-    print("⚠️ 内存读取API不可用，请安装: pip install pymem")
-
 
 def create_app():
     """
@@ -35,10 +27,7 @@ def create_app():
     # 注册蓝图
     app.register_blueprint(api_bp)
     
-    # 注册内存读取API（如果可用）
-    if MEMORY_API_AVAILABLE:
-        app.register_blueprint(memory_bp)
-        print("✅ 内存读取API已加载")
+    # Note: memory-reading and CV/vision features removed in this build.
     
     # 初始化SocketIO
     # 打包环境使用 threading 模式，并排除 eventlet/gevent
