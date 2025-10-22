@@ -3,10 +3,9 @@ import re
 import requests
 from requests.auth import HTTPBasicAuth # 确保导入 HTTPBasicAuth，用于 LCU 认证
 import json
-import datetime
+#import datetime
 import chardet
 import psutil
-# 假设 LOG_DIR, constants 等在其他文件中定义，这里只保留需要的导入
 from constants import LOG_DIR 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

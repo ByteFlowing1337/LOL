@@ -2,12 +2,13 @@
 venv/
 env/
 
-# 编译和临时文件
 *.pyc
 *__pycache__
 
 
-# 构建和文档文件
 /dist
 /build
 /html
+*.egg-info/
+*.egg
+*.whl

@@ -60,7 +60,7 @@ if CLIENT_ROOT_PATH:
     LOG_DIR = os.path.join(CLIENT_ROOT_PATH)
 else:
     # 如果找不到根目录，将 LOG_DIR 设置为 None
-    LOG_DIR = None
+    LOG_DIR = "C:\\WeGameApps\\英雄联盟\\LeagueClient"
 # 英雄ID到名称的映射
 CHAMPION_MAP = {
 266: "Aatrox",103: "Ahri",84: "Akali",166: "Akshan",12: "Alistar",799: "Ambessa",32: "Amumu",34: "Anivia",1: "Annie",523: "Aphelios",22: "Ashe",136: "AurelionSol",893: "Aurora",
