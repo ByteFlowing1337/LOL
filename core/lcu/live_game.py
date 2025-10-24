@@ -41,6 +41,10 @@ def get_enemy_players_from_game():
     """
     从游戏内API获取敌方队伍的所有玩家信息。
     
+    支持多种游戏模式:
+    - 传统模式 (5v5): 返回对方5人
+    - cherry模式 (2v2v2v2v2v2v2v2): 返回其他14人
+    
     Returns:
         list: 敌方玩家列表，每个玩家包含 summonerName、championName、team 等信息
         []: 如果游戏未开始或解析失败
@@ -51,9 +55,24 @@ def get_enemy_players_from_game():
     
     try:
         all_players = game_data.get('allPlayers', [])
-        # 获取当前玩家的队伍
         active_player = game_data.get('activePlayer', {})
-        my_team = active_player.get('team', '')
+        my_summoner_name = active_player.get('summonerName', '')
+        game_mode = game_data.get('gameData', {}).get('gameMode', 'CLASSIC')
+        
+        # 找到当前玩家的队伍
+        my_team = None
+        for player in all_players:
+            if player.get('summonerName') == my_summoner_name:
+                my_team = player.get('team', '')
+                break
+        
+        if not my_team:
+            print("⚠️ 无法确定当前玩家的队伍")
+            return []
+        
+        is_cherry_mode = game_mode.upper() == 'CHERRY'
+        if is_cherry_mode:
+            print(f"🍒 CHERRY 模式 (2v2v2v2v2v2v2v2)：当前队伍 {my_team}，查找其他队伍")
         
         # 筛选出敌方玩家（队伍不同的玩家）
         enemy_players = [
@@ -61,7 +80,8 @@ def get_enemy_players_from_game():
             if player.get('team', '') != my_team
         ]
         
-        print(f"找到 {len(enemy_players)} 名敌方玩家")
+        mode_suffix = " (CHERRY 模式 - 16人)" if is_cherry_mode else ""
+        print(f"找到 {len(enemy_players)} 名敌方玩家{mode_suffix}")
         return enemy_players
         
     except Exception as e:
@@ -78,6 +98,9 @@ def get_all_players_from_game(token, port):
     - 根据 allPlayers 中每个玩家的 team 字段进行分类
       * team 相同 → 队友
       * team 不同 → 敌人
+    - 特殊模式支持:
+      * cherry (斗魂竞技场): 2v2v2v2v2v2v2v2 (16人，8个队伍)
+      * 传统模式: 5v5 (10人)
     
     Args:
         token: LCU认证令牌（用于查询PUUID）
@@ -115,18 +138,26 @@ def get_all_players_from_game(token, port):
     try:
         all_players = game_data.get('allPlayers', [])
         active_player = game_data.get('activePlayer', {})
+        game_mode = game_data.get('gameData', {}).get('gameMode', 'CLASSIC')
         
-        if len(all_players) < 10:
-            print(f"⚠️ 玩家数据不完整，当前只有 {len(all_players)} 人")
+        # 检测游戏模式并确定最小玩家数
+        is_cherry_mode = game_mode.upper() == 'CHERRY'
+        min_players = 16 if is_cherry_mode else 10
+        
+        if len(all_players) < min_players:
+            print(f"⚠️ 玩家数据不完整，当前只有 {len(all_players)} 人（{game_mode} 模式需要至少 {min_players} 人）")
             return None
         
-        # 获取当前玩家的队伍 (ORDER 或 CHAOS)
-        my_team = active_player.get('summonerName', '')
+        if is_cherry_mode:
+            print("🍒 检测到斗魂竞技场模式 (CHERRY)，8个队伍每队2人，共16人")
+        
+        # 获取当前玩家的召唤师名和队伍
+        my_summoner_name = active_player.get('summonerName', '')
         my_team_side = None
         
         # 从 allPlayers 中找到当前玩家，确定队伍
         for player in all_players:
-            if player.get('summonerName') == my_team:
+            if player.get('summonerName') == my_summoner_name:
                 my_team_side = player.get('team', '')
                 break
         
@@ -134,7 +165,7 @@ def get_all_players_from_game(token, port):
             print("⚠️ 无法确定当前玩家的队伍")
             return None
         
-        print(f"🎮 当前玩家队伍: {my_team_side}")
+        print(f"🎮 当前玩家队伍: {my_team_side} (模式: {game_mode})")
         
         # 根据队伍分类玩家
         teammate_list = []
@@ -174,7 +205,8 @@ def get_all_players_from_game(token, port):
                 enemy_list.append(player_info)
                 print(f"💥 敌人: {summoner_name} ({player.get('championName', '未知')}) [队伍: {player_team}]")
         
-        print(f"✅ 成功获取 {len(teammate_list)} 名队友 ({my_team_side}) 和 {len(enemy_list)} 名敌人")
+        mode_info = f"({game_mode})" if is_cherry_mode else f"({my_team_side})"
+        print(f"✅ 成功获取 {len(teammate_list)} 名队友和 {len(enemy_list)} 名敌人 {mode_info}")
         
         return {
             'teammates': teammate_list,
