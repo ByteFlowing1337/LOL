@@ -6,7 +6,6 @@ from flask import Blueprint, render_template, jsonify, request
 from config import app_state
 from constants import CHAMPION_MAP
 import lcu_api
-from constants import CHAMPION_MAP
 from utils.game_data_formatter import format_game_data
 import requests
 import urllib3
