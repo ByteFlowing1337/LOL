@@ -60,6 +60,13 @@
     const gameIndex = SERVER_DATA.game_index || 0;
     const CHAMPION_MAP = SERVER_DATA.champion_map || {};
 
+    // Small helper for compact number formatting: 14300 -> 14.3k
+    function fmt(n){
+        if (n === null || n === undefined) return '';
+        if (Math.abs(n) >= 1000) return (n/1000).toFixed(1).replace(/\.0$/,'')+'k';
+        return ''+n;
+    }
+
     async function loadMatch() {
         const loading = document.getElementById('loading');
         const matchInfo = document.getElementById('match-info');
@@ -152,7 +159,6 @@
 
     const summ = p.summonerName || (p.player && (p.player.gameName ? (p.player.gameName + (p.player.tagLine ? ('#'+p.player.tagLine) : '')) : p.player.summonerName)) || p.summoner || '未知';
     const puuid = p.puuid || (p.player && p.player.puuid) || '';
-    const safeId = 'player-details-' + (puuid || summ).replace(/[^a-zA-Z0-9_-]/g,'_');
 
         return `
             <div class="match-row card mb-1 ${p.win ? 'win-row' : ''}">
@@ -163,15 +169,15 @@
                         <div class="small-muted">${p.role || ''} ${p.lane || ''}</div>
                     </div>
                 </div>
-                <div class="col-champion">
-                    ${champWrapper}
-                    <div class="col-stats small-muted">
-                        <div>${k}/${d}/${a} (${ratioStr} KDA)</div>
-                        <div>${gold.toLocaleString()}g · ${cs} CS</div>
-                        <div>伤害: ${damage.toLocaleString()}</div>
-                    </div>
+                <div class="col-champion">${champWrapper}</div>
+                <div class="col-kda">
+                    <span class="kda-prominent ${kdaClass}">${k}/${d}/${a}</span>
+                    <div class="small-muted">${ratioStr} KDA</div>
                 </div>
-                <div class="col-items">${itemsHtml}</div>
+                <div class="col-items-wrapper">
+                    <div class="items-row">${itemsHtml}</div>
+                    <div class="stats-row small-muted">${fmt(gold)}g · ${cs} CS · ${fmt(damage)} DMG</div>
+                </div>
             </div>
         `;
     }

@@ -105,6 +105,13 @@
     const summonerPuuid = SERVER_DATA.puuid || '';
     const CHAMPION_MAP = SERVER_DATA.champion_map || {};
     
+    // Small helper for compact number formatting: 14300 -> 14.3k
+    function fmt(n){
+        if (n === null || n === undefined) return '';
+        if (Math.abs(n) >= 1000) return (n/1000).toFixed(1).replace(/\.0$/,'')+'k';
+        return ''+n;
+    }
+
     async function loadSummonerDetails() {
         const loadingDiv = document.getElementById('loading');
         const errorDiv = document.getElementById('error-message');
@@ -381,7 +388,6 @@
             let kdaClass = 'kda-bad';
             if (ratioNum >= 5) kdaClass = 'kda-good';
             else if (ratioNum >= 3) kdaClass = 'kda-mid';
-            const safeId = 'player-details-' + (playerPuuid || name).replace(/[^a-zA-Z0-9_-]/g,'_') + '-' + (idx||0);
 
             return `
                 <div class="match-row ${p.win ? 'win-row' : ''}">
@@ -392,15 +398,15 @@
                             <div class="small-muted">${p.role || ''} ${p.lane || ''}</div>
                         </div>
                     </div>
-                    <div class="col-champion">
-                        ${champWrapper}
-                        <div class="col-stats small-muted">
-                            <div>${k}/${d}/${a} (${ratioStr} KDA)</div>
-                            <div>${gold.toLocaleString()}g · ${cs} CS</div>
-                            <div>伤害: ${damage.toLocaleString()}</div>
-                        </div>
+                    <div class="col-champion">${champWrapper}</div>
+                    <div class="col-kda">
+                        <span class="kda-prominent ${kdaClass}">${k}/${d}/${a}</span>
+                        <div class="small-muted">${ratioStr} KDA</div>
                     </div>
-                    <div class="col-items">${itemsHtml}</div>
+                    <div class="col-items-wrapper">
+                        <div class="items-row">${itemsHtml}</div>
+                        <div class="stats-row small-muted">${fmt(gold)}g · ${cs} CS · ${fmt(damage)} DMG</div>
+                    </div>
                 </div>`;
         }
         // show start/end times and duration above teams

@@ -28,18 +28,36 @@
 .kda-prominent{ display:inline-block; padding:6px 8px; border-radius:8px; font-weight:800; margin-top:6px; }
 .btn-more{ font-size:0.85rem; }
 
-/* Match table row layout inspired by OP.GG style */
-.match-row{ display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:6px; }
-.match-row + .match-row{ border-top:1px solid rgba(0,0,0,0.06); }
-.match-row .col-player-info{ display:flex; align-items:center; gap:10px; min-width:220px; max-width:320px; }
-.match-row .col-player-info .player-link img{ width:36px; height:36px; border-radius:50%; }
-.match-row .col-champion{ display:flex; flex-direction:column; align-items:center; gap:6px; min-width:88px; }
-.match-row .col-champion .champion-icon{ width:48px; height:48px; border-radius:6px; }
-.match-row .col-items{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; flex:1 1 320px; }
-.match-row .col-items .item-icon{ width:28px; height:28px; }
-.match-row .col-stats{ display:flex; flex-direction:column; align-items:center; gap:2px; }
-.match-row .player-name{ font-weight:700; color:var(--bs-body-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
-.match-row .small-muted{ color:rgba(0,0,0,0.6); font-size:0.85rem; }
+/* Match table row layout - compact single-line rows */
+.match-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; }
+.match-row + .match-row{ border-top:1px solid rgba(0,0,0,0.04); }
+.match-row .col-player-info{ display:flex; align-items:center; gap:8px; min-width:160px; max-width:260px; }
+.match-row .col-player-info .player-link img{ width:32px; height:32px; border-radius:50%; }
+.match-row .col-champion{ display:flex; align-items:center; gap:8px; min-width:64px; }
+.match-row .col-champion .champion-icon{ width:40px; height:40px; border-radius:6px; }
+/* New KDA column between champion and items */
+.match-row .col-kda{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:80px; text-align:center; }
+.match-row .col-kda .kda-prominent{ font-weight:800; padding:4px 8px; border-radius:6px; margin-bottom:2px; }
+.match-row .col-kda .small-muted{ font-size:0.8rem; color:#6c757d; }
+/* Items wrapper with stats below */
+.match-row .col-items-wrapper{ display:flex; flex-direction:column; gap:4px; flex:1 1 auto; overflow:hidden; }
+.match-row .items-row{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+.match-row .items-row .item-icon{ width:28px; height:28px; border-radius:4px; border:1px solid #ddd; }
+.match-row .stats-row{ font-size:0.82rem; color:#6c757d; white-space:nowrap; }
+.match-row .player-name{ font-weight:700; color:var(--bs-body-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+.match-row .small-muted{ color:rgba(0,0,0,0.6); font-size:0.82rem; }
+
+/* compact helpers */
+.kda-prominent{ font-weight:800; padding:2px 6px; border-radius:6px; }
+.stats-bottom{ font-weight:600; }
+
+/* visual polish */
+.match-row{ background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0)); }
+.match-row:hover{ background:linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); transform:translateY(-1px); }
+.win-row .kda-prominent{ box-shadow:0 2px 6px rgba(46,204,113,0.12); }
+.loss-row .kda-prominent{ box-shadow:0 2px 6px rgba(230,126,34,0.12); }
+.col-stats .small-muted{ color:#6c757d; }
+.items-row img{ display:block; }
 
 /* Alternate background tint for team rows */
 .team-separator{ background:linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); padding:6px 10px; border-radius:6px; margin:6px 0; font-weight:700; }
