@@ -275,6 +275,11 @@ def _process_match_history(history):
         if isinstance(game, dict):
             match_id = game.get('matchId') or game.get('gameId') or game.get('id') or (game.get('metadata') or {}).get('matchId')
 
+        # CHERRY 模式：提取子队伍排名信息
+        subteam_placement = None
+        if game.get('gameMode') == 'CHERRY':
+            subteam_placement = stats.get('subteamPlacement', 0)
+
         # keep a lightweight identifier (index) so frontend can request full match later
         processed_games.append({
             "champion_en": champion_en,
@@ -285,8 +290,8 @@ def _process_match_history(history):
             "gold": f"{gold_earned:,}",
             "cs": total_cs,
             "time_ago": time_diff,
-            "duration": game.get('gameDuration', 0)
-            ,
+            "duration": game.get('gameDuration', 0),
+            "subteamPlacement": subteam_placement,  # CHERRY 模式排名
             # index into the returned games list (0 = most recent)
             "match_index": idx,
             # preserve creation timestamp to help identification
@@ -303,6 +308,8 @@ def _format_game_mode(mode):
     mode_map = {
         'CLASSIC': '经典模式',
         'ARAM': '极地大乱斗',
+        'KIWI': '大乱斗',
+        'CHERRY': '斗魂竞技场',
         'URF': '无限火力',
         'ONEFORALL': '克隆模式',
         'NEXUSBLITZ': '激斗峡谷',

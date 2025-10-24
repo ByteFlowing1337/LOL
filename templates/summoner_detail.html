@@ -75,6 +75,16 @@
             right: 20px;
             z-index: 1000;
         }
+        .bg-light-success {
+            background-color: #d4edda !important;
+        }
+        .subteam-card {
+            transition: all 0.2s ease;
+        }
+        .subteam-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -239,9 +249,25 @@
         window._games = games;
 
         container.innerHTML = games.map((game, index) => {
-            const winClass = game.win ? 'win-bg' : 'loss-bg';
-            const winText = game.win ? '胜利' : '失败';
-            const winIcon = game.win ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
+            const isCherryMode = game.mode === 'CHERRY' || game.gameMode === 'CHERRY';
+            
+            // CHERRY 模式：使用排名判断胜负
+            let winClass, winText, winIcon;
+            if (isCherryMode) {
+                const placement = game.subteamPlacement || 0;
+                const isTop4 = placement > 0 && placement <= 4;
+                winClass = isTop4 ? 'win-bg' : 'loss-bg';
+                
+                const rankEmoji = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'][placement - 1] || `#${placement}`;
+                winText = isTop4 ? `${rankEmoji} 第${placement}名` : `${rankEmoji} 第${placement}名`;
+                winIcon = isTop4 ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
+            } else {
+                // 普通模式
+                winClass = game.win ? 'win-bg' : 'loss-bg';
+                winText = game.win ? '胜利' : '失败';
+                winIcon = game.win ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
+            }
+            
             const [kills, deaths, assists] = game.kda.split('/');
             const kda = deaths > 0 ? ((parseInt(kills) + parseInt(assists)) / parseInt(deaths)).toFixed(2) : 'Perfect';
             
@@ -265,7 +291,9 @@
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-${winIcon} me-2 fs-5"></i>
                                     <h5 class="mb-0 fw-bold">${winText}</h5>
-                                    <span class="badge bg-secondary ms-2">${game.mode}</span>
+                                    <span class="badge ${isCherryMode ? 'bg-info' : 'bg-secondary'} ms-2">
+                                        ${isCherryMode ? '斗魂竞技场' : game.mode}
+                                    </span>
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">
                                     <span class="badge stats-badge bg-dark">
@@ -361,9 +389,191 @@
         }
     }
 
+    // 通用玩家信息渲染函数（CHERRY 和普通模式共用）
+    function renderPlayerHtml(p, idx) {
+        const name = p.summonerName || (p.player && (p.player.gameName ? (p.player.gameName + (p.player.tagLine ? ('#'+p.player.tagLine) : '')) : p.player.summonerName)) || '未知';
+        const playerPuuid = p.puuid || (p.player && p.player.puuid) || '';
+        const icon = p.profileIcon || (p.player && (p.player.profileIcon)) || p.profileIconId || '';
+        // resolve champion image key via CHAMPION_MAP (server-provided)
+        const champKey = (p.championId && CHAMPION_MAP && CHAMPION_MAP[p.championId]) ? CHAMPION_MAP[p.championId] : (p.champion || p.championName || '');
+        const champImg = champKey ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${champKey}.png" class="champion-icon me-2" onerror="this.style.display='none'">` : '';
+        const level = (p.stats && p.stats.champLevel) || p.champLevel || 0;
+        const champWrapper = champImg ? `<div class="champion-wrapper">${champImg}${level?`<span class="level-badge">${level}</span>`:''}</div>` : '';
+        const k = p.stats ? p.stats.kills : (p.kills || 0);
+        const d = p.stats ? p.stats.deaths : (p.deaths || 0);
+        const a = p.stats ? p.stats.assists : (p.assists || 0);
+        const gold = (p.stats && p.stats.goldEarned) || p.gold || 0;
+        const cs = (p.stats && ((p.stats.totalMinionsKilled||0)+(p.stats.neutralMinionsKilled||0))) || p.cs || 0;
+        const damage = (p.stats && (p.stats.totalDamageDealtToChampions || 0)) || p.totalDamageDealtToChampions || 0;
+        const heal = (p.stats && p.stats.totalHeal) || p.totalHeal || 0;
+        const vision = (p.stats && p.stats.visionScore) || p.visionScore || 0;
+        const items = [];
+        if (p.stats) {
+            for (let i=0;i<7;i++) { const key='item'+i; if (p.stats[key] !== undefined) items.push(p.stats[key]); }
+        }
+        const itemsHtml = items.map(id => id ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/item/${id}.png" class="item-icon" onerror="this.style.display='none'">` : '').join('');
+        
+        // 提取增强（Augments）- KIWI/CHERRY模式
+        let augmentsHtml = '';
+        if (p.stats && p.stats.playerAugment1) {
+            const augments = [];
+            for (let i = 1; i <= 6; i++) {
+                const augId = p.stats['playerAugment' + i];
+                const augIconUrl = p.stats['augmentIcon' + i];
+                const augName = p.stats['augmentName' + i];
+                const augDesc = p.stats['augmentDesc' + i];
+                if (augId && augId > 0) {
+                    augments.push({ id: augId, iconUrl: augIconUrl, name: augName, desc: augDesc });
+                }
+            }
+            if (augments.length > 0) {
+                augmentsHtml = `<div class="augments-row small mt-1">
+                    ${augments.map(aug => {
+                        // 构建tooltip内容（中文名称+描述）
+                        let tooltip = aug.name || `海克斯天赋 ${aug.id}`;
+                        if (aug.desc) {
+                            // 清理HTML标签并截断描述
+                            const cleanDesc = aug.desc.replace(/<[^>]+>/g, '').substring(0, 200);
+                            tooltip = `${aug.name}\\n${cleanDesc}${cleanDesc.length >= 200 ? '...' : ''}`;
+                        }
+                        
+                        if (aug.iconUrl) {
+                            return `<img src="${aug.iconUrl}" 
+                                class="augment-icon" 
+                                title="${tooltip.replace(/"/g, '&quot;')}" 
+                                onerror="this.onerror=null;this.outerHTML='<span class=\\'badge\\' style=\\'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; padding: 2px 6px;\\' title=\\'${tooltip.replace(/"/g, '&quot;')}\\'>⚡${aug.id}</span>';">`;
+                        } else {
+                            // 如果没有图标URL，显示文本徽章
+                            return `<span class='badge' style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; padding: 2px 6px;' title='${tooltip.replace(/"/g, '&quot;')}'>⚡${aug.id}</span>`;
+                        }
+                    }).join(' ')}
+                </div>`;
+            }
+        }
+        
+        const profileImg = icon ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/${icon}.png" class="profile-img" onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/29.png';">` : `<div class="profile-placeholder"></div>`;
+        // clickable area uses inline style to look like plain text (no blue/underline)
+        const playerLink = `/summoner/${encodeURIComponent(name)}?puuid=${encodeURIComponent(playerPuuid)}`;
+        const ratio = d > 0 ? ((k + a) / d) : (k + a);
+        const ratioNum = Math.round(ratio * 100) / 100;
+        const ratioStr = ratioNum.toFixed(2);
+        let kdaClass = 'kda-bad';
+        if (ratioNum >= 5) kdaClass = 'kda-good';
+        else if (ratioNum >= 3) kdaClass = 'kda-mid';
+
+        return `
+            <div class="match-row ${p.win ? 'win-row' : ''}">
+                <div class="col-player-info">
+                    <a href="${playerLink}" class="player-link" target="_blank">${profileImg}</a>
+                    <div>
+                        <div class="player-name"><a href="${playerLink}" class="player-link player-name" target="_blank">${name}</a></div>
+                        <div class="small-muted">${p.role || ''} ${p.lane || ''}</div>
+                        ${augmentsHtml}
+                    </div>
+                </div>
+                <div class="col-champion">${champWrapper}</div>
+                <div class="col-kda">
+                    <span class="kda-prominent ${kdaClass}">${k}/${d}/${a}</span>
+                    <div class="small-muted">${ratioStr} KDA</div>
+                </div>
+                <div class="col-items-wrapper">
+                    <div class="items-row">${itemsHtml}</div>
+                    <div class="stats-row small-muted">${fmt(gold)}g · ${cs} CS · ${fmt(damage)} DMG</div>
+                </div>
+            </div>`;
+    }
+
+    // CHERRY 模式渲染函数
+    function renderCherryMode(game, sortedSubteams) {
+        // 前4名为获胜队伍
+        const winningSubteams = sortedSubteams.filter(t => t.placement <= 4);
+        const losingSubteams = sortedSubteams.filter(t => t.placement > 4);
+        
+        function subteamHtml(subteam) {
+            const placement = subteam.placement;
+            const isWinning = placement <= 4;
+            const rankEmoji = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'][placement - 1] || `#${placement}`;
+            
+            return `
+                <div class="mb-3 p-2 rounded ${isWinning ? 'bg-light-success' : 'bg-light'}" style="border-left: 4px solid ${isWinning ? '#28a745' : '#6c757d'}">
+                    <h6 class="mb-2">
+                        <span class="badge ${isWinning ? 'bg-success' : 'bg-secondary'}">${rankEmoji} 排名 ${placement}</span>
+                        <span class="badge bg-info ms-2">子队 ${subteam.subteamId}</span>
+                    </h6>
+                    ${subteam.players.map((p, i) => renderPlayerHtml(p, i)).join('')}
+                </div>
+            `;
+        }
+        
+        let headerTimeHtml = '';
+        try {
+            if (game.gameCreation) {
+                const durationSec = game.gameDuration || 0;
+                const start = new Date(game.gameCreation);
+                const end = new Date(game.gameCreation + (durationSec * 1000));
+                const minutes = Math.floor(durationSec / 60);
+                const seconds = durationSec % 60;
+                headerTimeHtml = `<div class="mb-2 text-muted">
+                    <span class="badge bg-primary me-2">斗魂竞技场 (2v2v2v2)</span>
+                    时长: ${minutes} 分 ${seconds} 秒 • 开始: ${start.toLocaleString()} • 结束: ${end.toLocaleString()}
+                </div>`;
+            }
+        } catch(e) { headerTimeHtml = ''; }
+        
+        return `
+            <div class="card mt-2">
+                <div class="card-body">
+                    ${headerTimeHtml}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-success mb-3">
+                                <i class="bi bi-trophy-fill me-2"></i>获胜队伍 (前4名)
+                            </h5>
+                            ${winningSubteams.map(st => subteamHtml(st)).join('')}
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-secondary mb-3">
+                                <i class="bi bi-x-circle-fill me-2"></i>失败队伍 (后4名)
+                            </h5>
+                            ${losingSubteams.map(st => subteamHtml(st)).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     function renderInlineMatchDetail(game) {
         if (!game) return `<div class="text-muted">无对局数据</div>`;
         const participants = game.participants || [];
+        const gameMode = game.gameMode || '';
+        
+        // CHERRY 模式：按子队伍分组
+        const isCherryMode = gameMode === 'CHERRY';
+        
+        if (isCherryMode) {
+            // 按子队伍分组
+            const subteams = {};
+            participants.forEach(p => {
+                const subteamId = (p.stats && p.stats.playerSubteamId) || 0;
+                if (!subteams[subteamId]) {
+                    subteams[subteamId] = {
+                        players: [],
+                        placement: (p.stats && p.stats.subteamPlacement) || 0
+                    };
+                }
+                subteams[subteamId].players.push(p);
+            });
+            
+            // 转换为数组并按排名排序
+            const sortedSubteams = Object.entries(subteams)
+                .map(([id, data]) => ({ subteamId: id, ...data }))
+                .sort((a, b) => a.placement - b.placement);
+            
+            return renderCherryMode(game, sortedSubteams);
+        }
+        
+        // 普通模式：按队伍分组
         const teamA = participants.filter(p => p.teamId === 100);
         const teamB = participants.filter(p => p.teamId === 200);
     // determine winning teamId from game.teams if present
@@ -373,98 +583,6 @@
             return winId;
         }, null);
 
-            function playerHtml(p, idx) {
-            const name = p.summonerName || (p.player && (p.player.gameName ? (p.player.gameName + (p.player.tagLine ? ('#'+p.player.tagLine) : '')) : p.player.summonerName)) || '未知';
-            const playerPuuid = p.puuid || (p.player && p.player.puuid) || '';
-            const icon = p.profileIcon || (p.player && (p.player.profileIcon)) || p.profileIconId || '';
-            // resolve champion image key via CHAMPION_MAP (server-provided)
-            const champKey = (p.championId && CHAMPION_MAP && CHAMPION_MAP[p.championId]) ? CHAMPION_MAP[p.championId] : (p.champion || p.championName || '');
-        const champImg = champKey ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${champKey}.png" class="champion-icon me-2" onerror="this.style.display='none'">` : '';
-            const level = (p.stats && p.stats.champLevel) || p.champLevel || 0;
-            const champWrapper = champImg ? `<div class="champion-wrapper">${champImg}${level?`<span class="level-badge">${level}</span>`:''}</div>` : '';
-            const k = p.stats ? p.stats.kills : (p.kills || 0);
-            const d = p.stats ? p.stats.deaths : (p.deaths || 0);
-            const a = p.stats ? p.stats.assists : (p.assists || 0);
-            const gold = (p.stats && p.stats.goldEarned) || p.gold || 0;
-            const cs = (p.stats && ((p.stats.totalMinionsKilled||0)+(p.stats.neutralMinionsKilled||0))) || p.cs || 0;
-            const damage = (p.stats && (p.stats.totalDamageDealtToChampions || 0)) || p.totalDamageDealtToChampions || 0;
-            const heal = (p.stats && p.stats.totalHeal) || p.totalHeal || 0;
-            const vision = (p.stats && p.stats.visionScore) || p.visionScore || 0;
-            const items = [];
-            if (p.stats) {
-                for (let i=0;i<7;i++) { const key='item'+i; if (p.stats[key] !== undefined) items.push(p.stats[key]); }
-            }
-            const itemsHtml = items.map(id => id ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/item/${id}.png" class="item-icon" onerror="this.style.display='none'">` : '').join('');
-            
-            // 提取增强（Augments）- KIWI模式特有
-            let augmentsHtml = '';
-            if (p.stats && p.stats.playerAugment1) {
-                const augments = [];
-                for (let i = 1; i <= 6; i++) {
-                    const augId = p.stats['playerAugment' + i];
-                    const augIconUrl = p.stats['augmentIcon' + i];
-                    const augName = p.stats['augmentName' + i];
-                    const augDesc = p.stats['augmentDesc' + i];
-                    if (augId && augId > 0) {
-                        augments.push({ id: augId, iconUrl: augIconUrl, name: augName, desc: augDesc });
-                    }
-                }
-                if (augments.length > 0) {
-                    augmentsHtml = `<div class="augments-row small mt-1">
-                        ${augments.map(aug => {
-                            // 构建tooltip内容（中文名称+描述）
-                            let tooltip = aug.name || `海克斯天赋 ${aug.id}`;
-                            if (aug.desc) {
-                                // 清理HTML标签并截断描述
-                                const cleanDesc = aug.desc.replace(/<[^>]+>/g, '').substring(0, 200);
-                                tooltip = `${aug.name}\\n${cleanDesc}${cleanDesc.length >= 200 ? '...' : ''}`;
-                            }
-                            
-                            if (aug.iconUrl) {
-                                return `<img src="${aug.iconUrl}" 
-                                    class="augment-icon" 
-                                    title="${tooltip.replace(/"/g, '&quot;')}" 
-                                    onerror="this.onerror=null;this.outerHTML='<span class=\\'badge\\' style=\\'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; padding: 2px 6px;\\' title=\\'${tooltip.replace(/"/g, '&quot;')}\\'>⚡${aug.id}</span>';">`;
-                            } else {
-                                // 如果没有图标URL，显示文本徽章
-                                return `<span class='badge' style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; padding: 2px 6px;' title='${tooltip.replace(/"/g, '&quot;')}'>⚡${aug.id}</span>`;
-                            }
-                        }).join(' ')}
-                    </div>`;
-                }
-            }
-            
-            const profileImg = icon ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/${icon}.png" class="profile-img" onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/29.png';">` : `<div class="profile-placeholder"></div>`;
-            // clickable area uses inline style to look like plain text (no blue/underline)
-            const playerLink = `/summoner/${encodeURIComponent(name)}?puuid=${encodeURIComponent(playerPuuid)}`;
-            const ratio = d > 0 ? ((k + a) / d) : (k + a);
-            const ratioNum = Math.round(ratio * 100) / 100;
-            const ratioStr = ratioNum.toFixed(2);
-            let kdaClass = 'kda-bad';
-            if (ratioNum >= 5) kdaClass = 'kda-good';
-            else if (ratioNum >= 3) kdaClass = 'kda-mid';
-
-            return `
-                <div class="match-row ${p.win ? 'win-row' : ''}">
-                    <div class="col-player-info">
-                        <a href="${playerLink}" class="player-link" target="_blank">${profileImg}</a>
-                        <div>
-                            <div class="player-name"><a href="${playerLink}" class="player-link player-name" target="_blank">${name}</a></div>
-                            <div class="small-muted">${p.role || ''} ${p.lane || ''}</div>
-                            ${augmentsHtml}
-                        </div>
-                    </div>
-                    <div class="col-champion">${champWrapper}</div>
-                    <div class="col-kda">
-                        <span class="kda-prominent ${kdaClass}">${k}/${d}/${a}</span>
-                        <div class="small-muted">${ratioStr} KDA</div>
-                    </div>
-                    <div class="col-items-wrapper">
-                        <div class="items-row">${itemsHtml}</div>
-                        <div class="stats-row small-muted">${fmt(gold)}g · ${cs} CS · ${fmt(damage)} DMG</div>
-                    </div>
-                </div>`;
-        }
         // show start/end times and duration above teams
         let headerTimeHtml = '';
         try {
@@ -484,11 +602,11 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6>队伍 1 ${winningTeamId === 100 ? '<span class="badge bg-success ms-2">胜利</span>' : ''}</h6>
-                            ${teamA.map((p,i) => playerHtml(p,i)).join('')}
+                            ${teamA.map((p,i) => renderPlayerHtml(p,i)).join('')}
                         </div>
                         <div class="col-md-6">
                             <h6>队伍 2 ${winningTeamId === 200 ? '<span class="badge bg-success ms-2">胜利</span>' : ''}</h6>
-                            ${teamB.map((p,i) => playerHtml(p,i)).join('')}
+                            ${teamB.map((p,i) => renderPlayerHtml(p,i)).join('')}
                         </div>
                     </div>
                 </div>
