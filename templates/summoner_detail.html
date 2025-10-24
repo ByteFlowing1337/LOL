@@ -237,7 +237,7 @@
                         <div class="row align-items-center">
                             <!-- 左侧：英雄信息 -->
                             <div class="col-md-2 col-sm-3 text-center">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${game.champion_en}.png" 
+                                <img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${game.champion_en}.png" 
                                      alt="${game.champion_en}" 
                                      class="champion-icon mb-2">
                                 <h6 class="mb-0">${game.champion_en}</h6>
@@ -363,7 +363,7 @@
             const icon = p.profileIcon || (p.player && (p.player.profileIcon)) || p.profileIconId || '';
             // resolve champion image key via CHAMPION_MAP (server-provided)
             const champKey = (p.championId && CHAMPION_MAP && CHAMPION_MAP[p.championId]) ? CHAMPION_MAP[p.championId] : (p.champion || p.championName || '');
-        const champImg = champKey ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${champKey}.png" class="champion-icon me-2" onerror="this.style.display='none'">` : '';
+        const champImg = champKey ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${champKey}.png" class="champion-icon me-2" onerror="this.style.display='none'">` : '';
             const level = (p.stats && p.stats.champLevel) || p.champLevel || 0;
             const champWrapper = champImg ? `<div class="champion-wrapper">${champImg}${level?`<span class="level-badge">${level}</span>`:''}</div>` : '';
             const k = p.stats ? p.stats.kills : (p.kills || 0);
@@ -378,8 +378,8 @@
             if (p.stats) {
                 for (let i=0;i<7;i++) { const key='item'+i; if (p.stats[key] !== undefined) items.push(p.stats[key]); }
             }
-            const itemsHtml = items.map(id => id ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/item/${id}.png" class="item-icon" onerror="this.style.display='none'">` : '').join('');
-            const profileImg = icon ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/${icon}.png" class="profile-img" onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/29.png';">` : `<div class="profile-placeholder"></div>`;
+            const itemsHtml = items.map(id => id ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/item/${id}.png" class="item-icon" onerror="this.style.display='none'">` : '').join('');
+            const profileImg = icon ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/${icon}.png" class="profile-img" onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/29.png';">` : `<div class="profile-placeholder"></div>`;
             // clickable area uses inline style to look like plain text (no blue/underline)
             const playerLink = `/summoner/${encodeURIComponent(name)}?puuid=${encodeURIComponent(playerPuuid)}`;
             const ratio = d > 0 ? ((k + a) / d) : (k + a);

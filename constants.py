@@ -62,23 +62,26 @@ if CLIENT_ROOT_PATH:
 else:
     # 如果找不到根目录，将 LOG_DIR 设置为 None
     LOG_DIR = "C:\\WeGameApps\\英雄联盟\\LeagueClient"
-# 英雄ID到名称的映射
+
+# 英雄ID到名称的映射 (基于 Data Dragon CDN 15.21.1)
 CHAMPION_MAP = {
-266: "Aatrox",103: "Ahri",84: "Akali",166: "Akshan",12: "Alistar",799: "Ambessa",32: "Amumu",34: "Anivia",1: "Annie",523: "Aphelios",22: "Ashe",136: "AurelionSol",893: "Aurora",
-268: "Azir",432: "Bard",200: "Belveth",53: "Blitzcrank",63: "Brand",201: "Braum",233: "Briar",51: "Caitlyn",164: "Camille",69: "Cassiopeia",31: "Cho'Gath",
-42: "Corki",122: "Darius",131: "Diana",119: "Draven",36: "Dr. Mundo",245: "Ekko",60: "Elise",28: "Evelynn",81: "Ezreal",9: "Fiddlesticks",114: "Fiora",
-105: "Fizz",3: "Galio",41: "Gangplank",86: "Garen",150: "Gnar",79: "Gragas",104: "Graves",887: "Gwen",120: "Hecarim",74: "Heimerdinger",910: "Hwei",420: "Illaoi",
-39: "Irelia",427: "Ivern",40: "Janna",59: "JarvanIV",24: "Jax",126: "Jayce",202: "Jhin",222: "Jinx",145: "Kaisa",429: "Kalista",43: "Karma",30: "Karthus",
-38: "Kassadin",55: "Katarina",10: "Kayle",141: "Kayn",85: "Kennen",121: "Kha'Zix",203: "Kindred",240: "Kled",96: "Kog'Maw",897: "KSante",7: "LeBlanc",
-64: "LeeSin",89: "Leona",876: "Lrgillia",127: "Lissandra",236: "Lucian",117: "Lulu",99: "Lux",54: "Malphite",90: "Malzahar",57: "Maokai",11: "MasterYi",
-800: "Mel",902: "Milio",21: "MissFortune",62: "Wukong",82: "Mordekaiser",25: "Morgana",950: "Naafiri",267: "Nami",75: "Nasus",111: "Nautilus",518: "Neeko",
-76: "Nidalee",895: "Nilah",56: "Nocturne",20: "Nunu",2: "Olaf",61: "Orianna",516: "Ornn",80: "Pantheon",78: "Poppy",555: "Pyke",246: "Qiyana",133: "Quinn",497: "Rakan",33: "Rammus",
-421: "RekSai",526: "Rell",888: "Renata",58: "Renekton",107: "Rengar",92: "Riven",68: "Rumble",13: "Ryze",360: "Samira",113: "Sejuani",235: "Senna",147: "Seraphine",
-875: "Sett",35: "Shaco",98: "Shen",102: "Shyvana",27: "Singed",14: "Sion",15: "Sivir",72: "Skarner",901: "Smolder",37: "Sona",16: "Soraka",50: "Swain",517: "Sylas",
-134: "Syndra",223: "TahmKench",163: "Taliyah",91: "Talon",44: "Taric",17: "Teemo",412: "Thresh",18: "Tristana",48: "Trundle",23: "Tryndamere",
-4: "TwistedFate",29: "Twitch",77: "Udyr",6: "Uot",110: "Varus",67: "Vayne",45: "Veigar",161: "Velkoz",711: "Vex",254: "Vi",234: "Viego",112: "Viktor",
-8: "Vladimir",106: "Volibear",19: "Warwick",498: "Xayah",101: "Xerath",5: "XinZhao",157: "Yasuo",777: "Yone",83: "Yorick",350: "Yuumi",154: "Zac",238: "Zed",
-221: "Zeri",115: "Ziggs",26: "Zilean",142: "Zoe",143: "Zyra"
+    1: "Annie", 2: "Olaf", 3: "Galio", 4: "TwistedFate", 5: "XinZhao", 6: "Urgot", 7: "Leblanc", 8: "Vladimir", 9: "Fiddlesticks", 10: "Kayle",
+    11: "MasterYi", 12: "Alistar", 13: "Ryze", 14: "Sion", 15: "Sivir", 16: "Soraka", 17: "Teemo", 18: "Tristana", 19: "Warwick", 20: "Nunu",
+    21: "MissFortune", 22: "Ashe", 23: "Tryndamere", 24: "Jax", 25: "Morgana", 26: "Zilean", 27: "Singed", 28: "Evelynn", 29: "Twitch", 30: "Karthus",
+    31: "Chogath", 32: "Amumu", 33: "Rammus", 34: "Anivia", 35: "Shaco", 36: "DrMundo", 37: "Sona", 38: "Kassadin", 39: "Irelia", 40: "Janna",
+    41: "Gangplank", 42: "Corki", 43: "Karma", 44: "Taric", 45: "Veigar", 48: "Trundle", 50: "Swain", 51: "Caitlyn", 53: "Blitzcrank", 54: "Malphite",
+    55: "Katarina", 56: "Nocturne", 57: "Maokai", 58: "Renekton", 59: "JarvanIV", 60: "Elise", 61: "Orianna", 62: "MonkeyKing", 63: "Brand", 64: "LeeSin",
+    67: "Vayne", 68: "Rumble", 69: "Cassiopeia", 72: "Skarner", 74: "Heimerdinger", 75: "Nasus", 76: "Nidalee", 77: "Udyr", 78: "Poppy", 79: "Gragas",
+    80: "Pantheon", 81: "Ezreal", 82: "Mordekaiser", 83: "Yorick", 84: "Akali", 85: "Kennen", 86: "Garen", 89: "Leona", 90: "Malzahar", 91: "Talon",
+    92: "Riven", 96: "KogMaw", 98: "Shen", 99: "Lux", 101: "Xerath", 102: "Shyvana", 103: "Ahri", 104: "Graves", 105: "Fizz", 106: "Volibear",
+    107: "Rengar", 110: "Varus", 111: "Nautilus", 112: "Viktor", 113: "Sejuani", 114: "Fiora", 115: "Ziggs", 117: "Lulu", 119: "Draven", 120: "Hecarim",
+    121: "Khazix", 122: "Darius", 126: "Jayce", 127: "Lissandra", 131: "Diana", 133: "Quinn", 134: "Syndra", 136: "AurelionSol", 141: "Kayn", 142: "Zoe",
+    143: "Zyra", 145: "Kaisa", 147: "Seraphine", 150: "Gnar", 154: "Zac", 157: "Yasuo", 161: "Velkoz", 163: "Taliyah", 164: "Camille", 166: "Akshan",
+    200: "Belveth", 201: "Braum", 202: "Jhin", 203: "Kindred", 221: "Zeri", 222: "Jinx", 223: "TahmKench", 233: "Briar", 234: "Viego", 235: "Senna",
+    236: "Lucian", 238: "Zed", 240: "Kled", 245: "Ekko", 246: "Qiyana", 254: "Vi", 266: "Aatrox", 267: "Nami", 268: "Azir", 350: "Yuumi",
+    360: "Samira", 412: "Thresh", 420: "Illaoi", 421: "RekSai", 427: "Ivern", 429: "Kalista", 432: "Bard", 497: "Rakan", 498: "Xayah", 516: "Ornn",
+    517: "Sylas", 518: "Neeko", 523: "Aphelios", 526: "Rell", 555: "Pyke", 711: "Vex", 777: "Yone", 799: "Ambessa", 800: "Mel", 804: "Yunara",
+    875: "Sett", 876: "Lillia", 887: "Gwen", 888: "Renata", 893: "Aurora", 895: "Nilah", 897: "KSante", 901: "Smolder", 902: "Milio", 910: "Hwei", 950: "Naafiri"
 }
 
 # CHAMPION_ZH_MAP = {

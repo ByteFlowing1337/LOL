@@ -197,10 +197,10 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-2 text-center">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${player.championRaw.replace('game_character_displayname_', '')}.png" 
+                                <img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${player.championRaw.replace('game_character_displayname_', '')}.png" 
                                      alt="${player.champion}" 
                                      class="champion-icon"
-                                     onerror="this.src='https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/29.png'">
+                                     onerror="this.src='https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/29.png'">
                                 <div class="mt-1">
                                     <span class="badge bg-secondary">Lv.${player.level}</span>
                                     
@@ -238,7 +238,7 @@
                                 <h6 class="small text-muted mb-2">装备:</h6>
                                 <div class="d-flex flex-wrap">
                                     ${player.items.map(item => 
-                                        `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/item/${item.id}.png" 
+                                        `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/item/${item.id}.png" 
                                               alt="${item.name}" 
                                               class="item-icon" 
                                               title="${item.name}">`

@@ -134,12 +134,12 @@
         let champKey = '';
         if (p.championId && CHAMPION_MAP && CHAMPION_MAP[p.championId]) champKey = CHAMPION_MAP[p.championId];
         else if (typeof champ === 'string' && !/^\d+$/.test(champ)) champKey = champ;
-    const champImg = champKey ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${champKey}.png" class="champion-icon" onerror="this.style.display='none'">` : '';
+    const champImg = champKey ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${champKey}.png" class="champion-icon" onerror="this.style.display='none'">` : '';
         const level = (p.stats && p.stats.champLevel) || p.champLevel || 0;
         const champWrapper = champImg ? `<div class="champion-wrapper">${champImg}${level?`<span class="level-badge">${level}</span>`:''}</div>` : '';
 
         const profileIconId = p.profileIcon || p.profileIconId || (p.player && (p.player.profileIcon || p.player.profileIconId)) || p.summonerProfileIcon || null;
-    const profileImg = profileIconId ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/${profileIconId}.png" class="profile-img me-2" onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/29.png';">` : '';
+    const profileImg = profileIconId ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/${profileIconId}.png" class="profile-img me-2" onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/29.png';">` : '';
 
         // items
         let itemsHtml = '';
@@ -148,7 +148,7 @@
             if (p.stats){
                 for (let i=0;i<7;i++){ const key='item'+i; if (p.stats[key] !== undefined) items.push(p.stats[key]); }
             } else if (p.items) items.push(...p.items.map(it => it.id || ''));
-            itemsHtml = items.map(id => id ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/item/${id}.png" class="item-icon" onerror="this.style.display='none'">` : '').join('');
+            itemsHtml = items.map(id => id ? `<img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/item/${id}.png" class="item-icon" onerror="this.style.display='none'">` : '').join('');
         }catch(e){ itemsHtml = ''; }
 
         const gold = (p.stats && p.stats.goldEarned) || p.gold || 0;

@@ -49,7 +49,7 @@ export async function fetchSummonerStats(gameName, tagLine, displayElement) {
                         <span class="${resultClass}">上局: ${resultText}</span>
                     </div>
                     <div class="text-muted" style="font-size: 0.85em;">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${lastGame.champion_en}.png" 
+                        <img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${lastGame.champion_en}.png" 
                              alt="${lastGame.champion_en}" 
                              width="20" 
                              height="20"
