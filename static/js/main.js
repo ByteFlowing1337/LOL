@@ -177,33 +177,61 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
     socket.on('status_update', function(data) {
         const statusElement = document.getElementById('lcu-status');
         const statusBox = document.getElementById('connection-status-box');
-        // 🚨 注意：后端 app.py 中，我们使用 'message' 键发送消息
+        // 🚨 注意：后端我们有时使用 'message' 键，有时使用 'data' 键
         const message = data.message || data.data; // 兼容 'message' 和 'data' 键
 
         if (!statusElement || !statusBox) return;
 
         console.log('LCU状态更新:', message);
-        statusElement.textContent = message; // 🎯 仅更新 LCU 连接状态框
 
-        // 🎯 移除：不再让 LCU 连接状态更新 `#realtime-status` 区域。
-        // `#realtime-status` 将只在 'start_auto_accept' 按钮点击时更新。
+        // 只在后端发送与 LCU 连接相关的消息时更新 `#lcu-status`，
+        // 避免把 "⚠️ 敌我分析功能已在运行中" 这样的业务状态覆盖连接状态导致逻辑误判。
+        const isConnectionMessage = (
+            (typeof message === 'string') && (
+                message.includes('LCU') ||
+                message.includes('本地服务器') ||
+                message.includes('检测') ||
+                message.includes('凭证') ||
+                message.includes('端口') ||
+                message.includes('连接成功') ||
+                message.includes('连接 LCU') ||
+                message.includes('LCU 连接') ||
+                message.includes('连接 LCU 失败') ||
+                message.includes('无法连接')
+            )
+        );
 
-        // 2. 根据消息内容判断状态并设置样式
-        if (message.includes('成功')) {
-            // 连接成功 (绿色背景)
-            statusBox.style.backgroundColor = '#d4edda'; // 浅绿色
-            statusBox.style.color = '#155724'; // 深绿色文本
-            statusBox.style.borderColor = '#c3e6cb'; // 边框
-        } else if (message.includes('失败') || message.includes('未运行') || message.includes('未找到')) {
-            // 连接失败 (红色背景)
-            statusBox.style.backgroundColor = '#f8d7da'; // 浅红色
-            statusBox.style.color = '#721c24'; // 深红色文本
-            statusBox.style.borderColor = '#f5c6cb'; // 边框
+        if (isConnectionMessage) {
+            // 仅更新显示 LCU 连接状态
+            statusElement.textContent = message;
+
+            // 根据连接相关关键词调整样式
+            if (message.includes('成功') || message.includes('已获取')) {
+                statusBox.style.backgroundColor = '#d4edda'; // 浅绿色
+                statusBox.style.color = '#155724';
+                statusBox.style.borderColor = '#c3e6cb';
+            } else if (message.includes('失败') || message.includes('未运行') || message.includes('未找到') || message.includes('无法连接')) {
+                statusBox.style.backgroundColor = '#f8d7da'; // 浅红色
+                statusBox.style.color = '#721c24';
+                statusBox.style.borderColor = '#f5c6cb';
+            } else {
+                statusBox.style.backgroundColor = '#cce5ff'; // 浅蓝色
+                statusBox.style.color = '#004085';
+                statusBox.style.borderColor = '#b8daff';
+            }
         } else {
-            // 正在检测中/等待指令 (蓝色/中性背景)
-            statusBox.style.backgroundColor = '#cce5ff'; // 浅蓝色
-            statusBox.style.color = '#004085'; // 深蓝色文本
-            statusBox.style.borderColor = '#b8daff'; // 边框
+            // 非连接消息（如: 自动接受/敌我分析 的运行状态）显示在实时状态区域，且**不修改** LCU 连接显示
+            realtimeStatus.textContent = message;
+            // 简单设置样式：运行中的消息用警告色显示
+            if (message.includes('运行中') || message.includes('已在运行')) {
+                realtimeStatus.className = 'badge bg-warning text-dark';
+            } else if (message.includes('开启') || message.includes('已开启') || message.includes('✅')) {
+                realtimeStatus.className = 'badge bg-success';
+            } else if (message.includes('无法') || message.includes('❌')) {
+                realtimeStatus.className = 'badge bg-danger';
+            } else {
+                realtimeStatus.className = 'badge bg-secondary';
+            }
         }
     });
 
@@ -273,9 +301,35 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
         return txt.includes('成功') || txt.includes('已连接') || txt.includes('连接成功');
     }
 
+    // --- Inline UI message helper (replaces alert) ---
+    function showInlineMessage(message, level = 'warning', duration = 7000) {
+        if (!realtimeStatus) return;
+        // set class according to level
+        let cls = 'badge ';
+        if (level === 'success') cls += 'bg-success';
+        else if (level === 'danger') cls += 'bg-danger';
+        else if (level === 'info') cls += 'bg-info';
+        else cls += 'bg-warning text-dark';
+
+        realtimeStatus.textContent = message;
+        realtimeStatus.className = cls;
+
+        if (window._realtimeMessageTimer) {
+            clearTimeout(window._realtimeMessageTimer);
+        }
+        if (duration > 0) {
+            window._realtimeMessageTimer = setTimeout(() => {
+                // clear message after duration
+                realtimeStatus.textContent = '';
+                realtimeStatus.className = '';
+                window._realtimeMessageTimer = null;
+            }, duration);
+        }
+    }
+
     autoAcceptBtn.addEventListener('click', () => {
         if (!isLCUConnected()) {
-            alert('无法启动自动接受：未检测到LCU连接， 请先确保客户端已运行并且LCU已连接。');
+            showInlineMessage('无法启动自动接受：未检测到 LCU 连接。请先确保客户端已运行并允许本地 API 访问。', 'danger', 7000);
             return;
         }
 
@@ -288,7 +342,7 @@ async function fetchSummonerStats(gameName, tagLine, displayElement) {
     
     autoAnalyzeBtn.addEventListener('click', () => {
         if (!isLCUConnected()) {
-            alert('无法启动敌我分析：未检测到LCU连接， 请先确保客户端已运行并且LCU已连接。');
+            showInlineMessage('无法启动敌我分析：未检测到 LCU 连接。请先确保客户端已运行并允许本地 API 访问。', 'danger', 7000);
             return;
         }
 

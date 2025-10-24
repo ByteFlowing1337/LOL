@@ -30,7 +30,7 @@ A lightweight Web UI for League of Legends helper features:
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e .
-uv run
+uv run app.py
 ```
 
 Then open the printed address (e.g. http://127.0.0.1:5000) in your browser.
