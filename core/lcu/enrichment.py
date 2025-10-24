@@ -3,6 +3,7 @@
 为游戏数据填充缺失的召唤师信息
 """
 from .summoner import get_summoner_by_puuid, get_summoner_by_id, get_summoner_by_name
+from constants import get_augment_icon_url, get_augment_info
 
 
 def enrich_game_with_summoner_info(token, port, game):
@@ -106,4 +107,76 @@ def enrich_game_with_summoner_info(token, port, game):
             print(f"enrich参与者信息失败: {e}")
             continue
 
+    return game
+
+
+def enrich_game_with_augments(game):
+    """
+    为 KIWI 和 CHERRY 模式游戏数据添加 augment 图标 URL 和中文信息
+    
+    遍历 participants，为每个玩家的 playerAugment1-6 生成对应的图标 URL 和中文名称/描述
+    
+    Args:
+        game: 游戏数据对象（dict）
+    
+    Returns:
+        dict: 增强后的游戏数据（就地修改并返回）
+    
+    Notes:
+        - 处理 KIWI 和 CHERRY 模式游戏
+        - KIWI模式: augment ID 已经包含+1000偏移
+        - CHERRY模式: augment ID 是原始ID，需要+1000才能映射
+        - 为每个 playerAugment 字段添加对应的 augmentIcon、augmentName、augmentDesc 字段
+    """
+    if not game or not isinstance(game, dict):
+        return game
+    
+    game_mode = game.get('gameMode')
+    
+    # 只处理 KIWI 和 CHERRY 模式
+    if game_mode not in ['KIWI', 'CHERRY']:
+        return game
+    
+    participants = game.get('participants') or []
+    
+    for p in participants:
+        try:
+            stats = p.get('stats') or {}
+            
+            # 处理 6 个 augment 插槽
+            for i in range(1, 7):
+                augment_key = f'playerAugment{i}'
+                icon_key = f'augmentIcon{i}'
+                name_key = f'augmentName{i}'
+                desc_key = f'augmentDesc{i}'
+                
+                augment_id = stats.get(augment_key)
+                
+                # 如果 augment ID 有效（非0），生成 URL 和中文信息
+                if augment_id and augment_id > 0:
+                    # CHERRY模式的ID需要+1000才能映射到我们的常量表
+                    # KIWI模式的ID已经包含+1000偏移
+                    mapped_id = augment_id + 1000 if game_mode == 'CHERRY' else augment_id
+                    
+                    # 图标URL
+                    icon_url = get_augment_icon_url(mapped_id)
+                    stats[icon_key] = icon_url
+                    
+                    # 中文名称和描述
+                    aug_info = get_augment_info(mapped_id)
+                    if aug_info:
+                        stats[name_key] = aug_info.get('name', '')
+                        stats[desc_key] = aug_info.get('desc', '')
+                    else:
+                        stats[name_key] = None
+                        stats[desc_key] = None
+                else:
+                    stats[icon_key] = None
+                    stats[name_key] = None
+                    stats[desc_key] = None
+                    
+        except Exception as e:
+            print(f"enrich augment信息失败: {e}")
+            continue
+    
     return game

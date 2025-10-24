@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, jsonify, request
 from config import app_state
 from constants import CHAMPION_MAP
 from core import lcu
+from core.lcu.enrichment import enrich_game_with_augments
 from utils.game_data_formatter import format_game_data
 import requests
 import urllib3
@@ -155,6 +156,7 @@ def get_match():
             game = match_obj.get('game') if (isinstance(match_obj, dict) and 'game' in match_obj) else match_obj
             try:
                 lcu.enrich_game_with_summoner_info(token, port, game)
+                enrich_game_with_augments(game)  # 添加 augment 图标 URL
             except Exception as e:
                 print(f"召唤师信息补全失败 (match_id path): {e}")
             return jsonify({"success": True, "game": game})
@@ -191,6 +193,7 @@ def get_match():
         lcu_token = token
         lcu_port = port
         lcu.enrich_game_with_summoner_info(lcu_token, lcu_port, game)
+        enrich_game_with_augments(game)  # 添加 augment 图标 URL
     except Exception as e:
         # enrichment 是 best-effort，不应阻塞主响应
         print(f"召唤师信息补全失败: {e}")

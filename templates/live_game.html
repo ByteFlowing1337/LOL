@@ -231,6 +231,9 @@
                                 <div class="small text-muted">
                                     <div><strong>符文:</strong> ${player.keystone} (${player.primaryRune}/${player.secondaryRune})</div>
                                     <div><strong>召唤师技能:</strong> ${player.spell1} / ${player.spell2}</div>
+                                    ${player.augments && player.augments.length > 0 ? 
+                                        `<div><strong class="text-warning">增强:</strong> ${player.augments.map(aug => `<span class="badge bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">${aug.name}</span>`).join(' ')}</div>` 
+                                        : ''}
                                 </div>
                             </div>
                             

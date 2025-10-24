@@ -19,8 +19,11 @@ def format_player_info(player_data, active_player_name):
     game_name = player_data.get('riotIdGameName', '')
     tag_line = player_data.get('riotIdTagLine', '')
     
-    # 提取KDA
-    scores = player_data.get('scores', {})
+    # 提取KDA（防御性编程：处理 None 情况）
+    scores = player_data.get('scores')
+    if scores is None or not isinstance(scores, dict):
+        scores = {}
+    
     kills = scores.get('kills', 0)
     deaths = scores.get('deaths', 0)
     assists = scores.get('assists', 0)
@@ -33,11 +36,14 @@ def format_player_info(player_data, active_player_name):
     is_dead = player_data.get('isDead', False)
     respawn_timer = player_data.get('respawnTimer', 0)
     
-    # 提取装备信息
-    items = player_data.get('items', [])
+    # 提取装备信息（防御性编程：处理 None 情况）
+    items = player_data.get('items')
+    if items is None or not isinstance(items, list):
+        items = []
+    
     item_list = []
     for item in items:
-        if item.get('itemID') not in [0, 3340, 3363, 3364]:  # 排除空格和饰品
+        if item and item.get('itemID') not in [0, 3340, 3363, 3364]:  # 排除空格和饰品
             item_list.append({
                 'id': item.get('itemID'),
                 'name': item.get('displayName', ''),
@@ -45,16 +51,51 @@ def format_player_info(player_data, active_player_name):
                 'canUse': item.get('canUse', False)
             })
     
-    # 提取符文信息
-    runes = player_data.get('runes', {})
-    keystone = runes.get('keystone', {})
-    primary_tree = runes.get('primaryRuneTree', {})
-    secondary_tree = runes.get('secondaryRuneTree', {})
+    # 提取符文信息（防御性编程：处理 None 情况）
+    runes = player_data.get('runes')
+    if runes is None or not isinstance(runes, dict):
+        runes = {}
     
-    # 提取召唤师技能
-    summoner_spells = player_data.get('summonerSpells', {})
+    keystone = runes.get('keystone', {})
+    if keystone is None or not isinstance(keystone, dict):
+        keystone = {}
+    
+    primary_tree = runes.get('primaryRuneTree', {})
+    if primary_tree is None or not isinstance(primary_tree, dict):
+        primary_tree = {}
+    
+    secondary_tree = runes.get('secondaryRuneTree', {})
+    if secondary_tree is None or not isinstance(secondary_tree, dict):
+        secondary_tree = {}
+    
+    # 提取召唤师技能（防御性编程：处理 None 情况）
+    summoner_spells = player_data.get('summonerSpells')
+    if summoner_spells is None or not isinstance(summoner_spells, dict):
+        summoner_spells = {}
+    
     spell_one = summoner_spells.get('summonerSpellOne', {})
+    if spell_one is None or not isinstance(spell_one, dict):
+        spell_one = {}
+    
     spell_two = summoner_spells.get('summonerSpellTwo', {})
+    if spell_two is None or not isinstance(spell_two, dict):
+        spell_two = {}
+    
+    # 提取增强（Augments）- KIWI模式特有
+    # 检查召唤师技能中是否包含增强技能（rawDescription包含"Augment"）
+    augments = []
+    if spell_one and 'Augment' in spell_one.get('rawDescription', ''):
+        augments.append({
+            'name': spell_one.get('displayName', ''),
+            'raw': spell_one.get('rawDisplayName', ''),
+            'description': spell_one.get('rawDescription', '')
+        })
+    if spell_two and 'Augment' in spell_two.get('rawDescription', ''):
+        augments.append({
+            'name': spell_two.get('displayName', ''),
+            'raw': spell_two.get('rawDisplayName', ''),
+            'description': spell_two.get('rawDescription', '')
+        })
     
     # 提取队伍信息
     team = player_data.get('team', 'UNKNOWN')
@@ -85,6 +126,7 @@ def format_player_info(player_data, active_player_name):
         'secondaryRune': secondary_tree.get('displayName', ''),
         'spell1': spell_one.get('displayName', ''),
         'spell2': spell_two.get('displayName', ''),
+        'augments': augments,  # KIWI模式增强列表
         'team': team,
         'position': position,
         'isCurrentPlayer': is_current_player
@@ -101,16 +143,25 @@ def format_game_data(all_game_data):
     Returns:
         dict: 包含格式化后的玩家列表和游戏信息
     """
-    active_player = all_game_data.get('activePlayer', {})
+    # 防御性编程：确保所有字段都不为 None
+    active_player = all_game_data.get('activePlayer')
+    if active_player is None or not isinstance(active_player, dict):
+        active_player = {}
+    
     active_player_name = active_player.get('summonerName', '')
     active_player_team = None
     
-    all_players = all_game_data.get('allPlayers', [])
-    game_data = all_game_data.get('gameData', {})
+    all_players = all_game_data.get('allPlayers')
+    if all_players is None or not isinstance(all_players, list):
+        all_players = []
+    
+    game_data = all_game_data.get('gameData')
+    if game_data is None or not isinstance(game_data, dict):
+        game_data = {}
     
     # 找到当前玩家的队伍
     for player in all_players:
-        if player.get('summonerName') == active_player_name:
+        if player and player.get('summonerName') == active_player_name:
             active_player_team = player.get('team', '')
             break
     
@@ -119,12 +170,20 @@ def format_game_data(all_game_data):
     enemies = []
     
     for player in all_players:
-        formatted_player = format_player_info(player, active_player_name)
+        if not player:  # 跳过空玩家数据
+            continue
         
-        if player.get('team') == active_player_team:
-            teammates.append(formatted_player)
-        else:
-            enemies.append(formatted_player)
+        try:
+            formatted_player = format_player_info(player, active_player_name)
+            
+            if player.get('team') == active_player_team:
+                teammates.append(formatted_player)
+            else:
+                enemies.append(formatted_player)
+        except Exception as e:
+            # 记录错误但继续处理其他玩家
+            print(f"⚠️ 格式化玩家数据失败 ({player.get('summonerName', 'Unknown')}): {e}")
+            continue
     
     # 提取游戏信息
     game_info = {
@@ -134,15 +193,23 @@ def format_game_data(all_game_data):
         'mapNumber': game_data.get('mapNumber', 11)
     }
     
-    # 提取事件信息（最近击杀等）
-    events = all_game_data.get('events', {}).get('Events', [])
+    # 提取事件信息（最近击杀等）- 防御性处理
+    events_data = all_game_data.get('events')
+    if events_data is None or not isinstance(events_data, dict):
+        events_data = {}
+    
+    events = events_data.get('Events', [])
+    if events is None or not isinstance(events, list):
+        events = []
+    
     recent_kills = []
+    
     for event in reversed(events):
-        if event.get('EventName') == 'ChampionKill':
+        if event and event.get('EventName') == 'ChampionKill':
             recent_kills.append({
                 'killer': event.get('KillerName', ''),
                 'victim': event.get('VictimName', ''),
-                'assisters': event.get('Assisters', []),
+                'assisters': event.get('Assisters') or [],
                 'time': round(event.get('EventTime', 0), 1)
             })
             if len(recent_kills) >= 5:  # 只保留最近5次击杀

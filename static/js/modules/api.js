@@ -1,13 +1,14 @@
 // api.js - functions that call server endpoints / helper for fetching summoner stats
 import { qs } from './ui.js';
 
-export async function fetchSummonerStats(gameName, tagLine, displayElement) {
+export async function fetchSummonerStats(gameName, tagLine, displayElement, count = 10) {
     const apiEndpoint = '/get_history';
     const fullRiotId = `${gameName}#${tagLine}`;
     const encodedRiotId = encodeURIComponent(fullRiotId);
 
     try {
-        const response = await fetch(`${apiEndpoint}?name=${encodedRiotId}`);
+        // 🚀 优化：队友分析时只查询10场，减少查询时间
+        const response = await fetch(`${apiEndpoint}?name=${encodedRiotId}&count=${count}`);
 
         if (!response.ok) {
             throw new Error(`HTTP 错误! 状态码: ${response.status}`);

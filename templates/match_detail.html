@@ -13,6 +13,22 @@
         .player-row:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
         .champion-icon { width:48px; height:48px; border-radius:50%; }
         .item-icon { width:32px; height:32px; }
+        .augment-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 2px solid #764ba2;
+            margin: 0 2px;
+            box-shadow: 0 2px 4px rgba(118, 75, 162, 0.3);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1px;
+        }
+        .augments-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
         .champion-wrapper { position: relative; display: inline-block; }
         .level-badge { position: absolute; right: -6px; bottom: -6px; background: rgba(0,0,0,0.75); color: #fff; width: 22px; height: 22px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; border:2px solid #fff; }
         .kda-badge { background: linear-gradient(90deg,#ffecb3,#ffd54f); padding:4px 8px; border-radius:6px; font-weight:700; color:#222; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
@@ -157,6 +173,44 @@
         const heal = (p.stats && p.stats.totalHeal) || p.totalHeal || 0;
         const vision = (p.stats && p.stats.visionScore) || p.visionScore || 0;
 
+        // 提取增强（Augments）- KIWI模式特有
+        let augmentsHtml = '';
+        if (p.stats && p.stats.playerAugment1) {
+            const augments = [];
+            for (let i = 1; i <= 6; i++) {
+                const augId = p.stats['playerAugment' + i];
+                const augIconUrl = p.stats['augmentIcon' + i];
+                const augName = p.stats['augmentName' + i];
+                const augDesc = p.stats['augmentDesc' + i];
+                if (augId && augId > 0) {
+                    augments.push({ id: augId, iconUrl: augIconUrl, name: augName, desc: augDesc });
+                }
+            }
+            if (augments.length > 0) {
+                augmentsHtml = `<div class="augments-row small mt-1">
+                    ${augments.map(aug => {
+                        // 构建tooltip内容（中文名称+描述）
+                        let tooltip = aug.name || `海克斯天赋 ${aug.id}`;
+                        if (aug.desc) {
+                            // 清理HTML标签并截断描述
+                            const cleanDesc = aug.desc.replace(/<[^>]+>/g, '').substring(0, 200);
+                            tooltip = `${aug.name}\\n${cleanDesc}${cleanDesc.length >= 200 ? '...' : ''}`;
+                        }
+                        
+                        if (aug.iconUrl) {
+                            return `<img src="${aug.iconUrl}" 
+                                class="augment-icon" 
+                                title="${tooltip.replace(/"/g, '&quot;')}" 
+                                onerror="this.onerror=null;this.outerHTML='<span class=\\'badge\\' style=\\'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; padding: 2px 6px;\\' title=\\'${tooltip.replace(/"/g, '&quot;')}\\'>⚡${aug.id}</span>';">`;
+                        } else {
+                            // 如果没有图标URL，显示文本徽章
+                            return `<span class='badge' style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; padding: 2px 6px;' title='${tooltip.replace(/"/g, '&quot;')}'>⚡${aug.id}</span>`;
+                        }
+                    }).join(' ')}
+                </div>`;
+            }
+        }
+
     const summ = p.summonerName || (p.player && (p.player.gameName ? (p.player.gameName + (p.player.tagLine ? ('#'+p.player.tagLine) : '')) : p.player.summonerName)) || p.summoner || '未知';
     const puuid = p.puuid || (p.player && p.player.puuid) || '';
 
@@ -167,6 +221,7 @@
                     <div>
                         <div class="player-name"><a href="/summoner/${encodeURIComponent(summ)}?puuid=${encodeURIComponent(puuid)}" class="player-link player-name" target="_blank">${summ}</a></div>
                         <div class="small-muted">${p.role || ''} ${p.lane || ''}</div>
+                        ${augmentsHtml}
                     </div>
                 </div>
                 <div class="col-champion">${champWrapper}</div>
