@@ -27,7 +27,7 @@ def create_app():
     # 注册蓝图
     app.register_blueprint(api_bp)
     
-    # Note: memory-reading and CV/vision features removed in this build.
+ 
     
     # 初始化SocketIO
     # 打包环境使用 threading 模式，并排除 eventlet/gevent

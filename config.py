@@ -18,7 +18,6 @@ class AppState:
         # 功能开关
         self.auto_accept_enabled: bool = False
         self.auto_analyze_enabled: bool = False
-        self.vision_detection_enabled: bool = False  # CV检测开关
 
         # 分析状态
         self.teammate_analysis_done: bool = False
@@ -34,8 +33,6 @@ class AppState:
         # 线程引用
         self.auto_accept_thread: 'Thread | None' = None
         self.auto_analyze_thread: 'Thread | None' = None
-        self.vision_detection_thread: 'Thread | None' = None  # CV检测线程
-        self.tf_detection_thread: 'Thread | None' = None  # 卡牌辅助检测线程
     
     def reset_analysis_state(self):
         """重置分析状态"""

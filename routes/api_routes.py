@@ -62,15 +62,7 @@ def live_game():
     return render_template('live_game.html')
 
 
-@api_bp.route('/vision_detection')
-def vision_detection():
-    """
-    渲染CV视觉检测页面
-    
-    Returns:
-        HTML: CV视觉检测页面
-    """
-    return render_template('vision_detection.html')
+
 
 
 @api_bp.route('/get_history', methods=['GET'])
