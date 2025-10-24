@@ -7,6 +7,7 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
     
     <style>
         body {
@@ -42,6 +43,11 @@
             border: 3px solid #fff;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
+            .champion-wrapper { position: relative; display: inline-block; }
+            .level-badge { position: absolute; right: -6px; bottom: -6px; background: rgba(0,0,0,0.75); color: #fff; width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; border:2px solid #fff; }
+            .kda-badge { background: linear-gradient(90deg,#ffecb3,#ffd54f); padding:6px 10px; border-radius:8px; font-weight:700; color:#222; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+            .items-col { display:flex; gap:4px; align-items:center; }
+            .meta-badge { font-size:0.85rem; padding:0.25rem 0.5rem; margin-right:6px; }
         .stats-badge {
             font-size: 0.9rem;
             padding: 0.4rem 0.8rem;
@@ -91,8 +97,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Server-provided data (JSON) to avoid embedding raw Jinja in JS code that breaks editor linting -->
+<script id="server-data" type="application/json">{{ {'summoner_name': summoner_name, 'puuid': (puuid if puuid is defined else ''), 'champion_map': (champion_map if champion_map is defined else {}) }|tojson }}</script>
 <script>
-    const summonerName = "{{ summoner_name }}";
+    const SERVER_DATA = JSON.parse(document.getElementById('server-data').textContent || '{}');
+    const summonerName = SERVER_DATA.summoner_name || '';
+    const summonerPuuid = SERVER_DATA.puuid || '';
+    const CHAMPION_MAP = SERVER_DATA.champion_map || {};
     
     async function loadSummonerDetails() {
         const loadingDiv = document.getElementById('loading');
@@ -102,7 +113,13 @@
         const summaryDiv = document.getElementById('stats-summary');
 
         try {
-            const response = await fetch(`/get_history?name=${encodeURIComponent(summonerName)}`);
+            let historyUrl = '';
+            if (summonerPuuid && summonerPuuid.length > 0) {
+                historyUrl = `/get_history?puuid=${encodeURIComponent(summonerPuuid)}`;
+            } else {
+                historyUrl = `/get_history?name=${encodeURIComponent(summonerName)}`;
+            }
+            const response = await fetch(historyUrl);
             const data = await response.json();
 
             loadingDiv.style.display = 'none';
@@ -195,6 +212,9 @@
     }
 
     function displayGames(games, container) {
+        // keep games globally so toggleMatchDetails can access them
+        window._games = games;
+
         container.innerHTML = games.map((game, index) => {
             const winClass = game.win ? 'win-bg' : 'loss-bg';
             const winText = game.win ? '胜利' : '失败';
@@ -250,12 +270,168 @@
                                     <i class="bi bi-clock me-1"></i>${game.time_ago}
                                 </small>
                                 <span class="badge bg-light text-dark">第 ${index + 1} 场</span>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleMatchDetails(${index})" type="button">
+                                        <i class="bi bi-chevron-down me-1"></i>展开对局
+                                    </button>
+                                    <a class="btn btn-sm btn-outline-secondary ms-2" 
+                                        href="/match/${encodeURIComponent(summonerName)}/${index}?match_id=${encodeURIComponent(game.match_id || '')}"
+                                        target="_blank" rel="noopener noreferrer">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i>在新页打开
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <!-- inline details container (collapsed by default) -->
+                    <div id="match-details-${index}" class="collapse ps-3 pe-3 pb-3"></div>
                 </div>
             `;
         }).join('');
+    }
+
+    async function toggleMatchDetails(index) {
+        const detailsId = `match-details-${index}`;
+        const el = document.getElementById(detailsId);
+        if (!el) return;
+
+        // If content already loaded, just toggle
+        if (el.dataset.loaded === 'true') {
+            // bootstrap collapse toggle
+            const bsCollapse = new bootstrap.Collapse(el, {toggle: true});
+            return;
+        }
+
+        // show spinner while loading
+        el.innerHTML = `<div class="text-center py-3"><div class="spinner-border" role="status"><span class="visually-hidden">加载中...</span></div></div>`;
+        const bs = new bootstrap.Collapse(el, {toggle: true});
+
+        try {
+            const games = window._games || [];
+            const gameMeta = games[index];
+            let resp;
+            if (gameMeta && gameMeta.match_id) {
+                resp = await fetch(`/get_match?match_id=${encodeURIComponent(gameMeta.match_id)}`);
+            } else {
+                resp = await fetch(`/get_match?name=${encodeURIComponent(summonerName)}&index=${index}`);
+            }
+            const data = await resp.json();
+            console.debug('get_match response for index', index, data);
+            if (!data.success) {
+                el.innerHTML = `<div class="alert alert-warning">无法获取对局详情: ${data.message || '未知错误'}</div>`;
+                el.dataset.loaded = 'true';
+                return;
+            }
+
+            const game = data.game;
+            try {
+                el.innerHTML = renderInlineMatchDetail(game);
+            } catch (renderErr) {
+                console.error('renderInlineMatchDetail failed', renderErr, game);
+                el.innerHTML = `<div class="alert alert-danger">渲染对局详情失败（控制台查看错误）</div>`;
+            }
+            el.dataset.loaded = 'true';
+        } catch (e) {
+            console.error(e);
+            el.innerHTML = `<div class="alert alert-danger">加载对局详情失败</div>`;
+            el.dataset.loaded = 'true';
+        }
+    }
+
+    function renderInlineMatchDetail(game) {
+        if (!game) return `<div class="text-muted">无对局数据</div>`;
+        const participants = game.participants || [];
+        const teamA = participants.filter(p => p.teamId === 100);
+        const teamB = participants.filter(p => p.teamId === 200);
+    // determine winning teamId from game.teams if present
+        const winningTeamId = (game.teams || []).reduce((winId, t) => {
+            // some payloads use 'win': 'Win' or boolean true
+            if (t.win === true || String(t.win).toLowerCase() === 'win') return t.teamId || winId;
+            return winId;
+        }, null);
+
+            function playerHtml(p, idx) {
+            const name = p.summonerName || (p.player && (p.player.gameName ? (p.player.gameName + (p.player.tagLine ? ('#'+p.player.tagLine) : '')) : p.player.summonerName)) || '未知';
+            const playerPuuid = p.puuid || (p.player && p.player.puuid) || '';
+            const icon = p.profileIcon || (p.player && (p.player.profileIcon)) || p.profileIconId || '';
+            // resolve champion image key via CHAMPION_MAP (server-provided)
+            const champKey = (p.championId && CHAMPION_MAP && CHAMPION_MAP[p.championId]) ? CHAMPION_MAP[p.championId] : (p.champion || p.championName || '');
+        const champImg = champKey ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/champion/${champKey}.png" class="champion-icon me-2" onerror="this.style.display='none'">` : '';
+            const level = (p.stats && p.stats.champLevel) || p.champLevel || 0;
+            const champWrapper = champImg ? `<div class="champion-wrapper">${champImg}${level?`<span class="level-badge">${level}</span>`:''}</div>` : '';
+            const k = p.stats ? p.stats.kills : (p.kills || 0);
+            const d = p.stats ? p.stats.deaths : (p.deaths || 0);
+            const a = p.stats ? p.stats.assists : (p.assists || 0);
+            const gold = (p.stats && p.stats.goldEarned) || p.gold || 0;
+            const cs = (p.stats && ((p.stats.totalMinionsKilled||0)+(p.stats.neutralMinionsKilled||0))) || p.cs || 0;
+            const damage = (p.stats && (p.stats.totalDamageDealtToChampions || 0)) || p.totalDamageDealtToChampions || 0;
+            const heal = (p.stats && p.stats.totalHeal) || p.totalHeal || 0;
+            const vision = (p.stats && p.stats.visionScore) || p.visionScore || 0;
+            const items = [];
+            if (p.stats) {
+                for (let i=0;i<7;i++) { const key='item'+i; if (p.stats[key] !== undefined) items.push(p.stats[key]); }
+            }
+            const itemsHtml = items.map(id => id ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/item/${id}.png" class="item-icon" onerror="this.style.display='none'">` : '').join('');
+            const profileImg = icon ? `<img src="https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/${icon}.png" class="profile-img" onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/14.13.1/img/profileicon/29.png';">` : `<div class="profile-placeholder"></div>`;
+            // clickable area uses inline style to look like plain text (no blue/underline)
+            const playerLink = `/summoner/${encodeURIComponent(name)}?puuid=${encodeURIComponent(playerPuuid)}`;
+            const ratio = d > 0 ? ((k + a) / d) : (k + a);
+            const ratioNum = Math.round(ratio * 100) / 100;
+            const ratioStr = ratioNum.toFixed(2);
+            let kdaClass = 'kda-bad';
+            if (ratioNum >= 5) kdaClass = 'kda-good';
+            else if (ratioNum >= 3) kdaClass = 'kda-mid';
+            const safeId = 'player-details-' + (playerPuuid || name).replace(/[^a-zA-Z0-9_-]/g,'_') + '-' + (idx||0);
+
+            return `
+                <div class="match-row ${p.win ? 'win-row' : ''}">
+                    <div class="col-player-info">
+                        <a href="${playerLink}" class="player-link" target="_blank">${profileImg}</a>
+                        <div>
+                            <div class="player-name"><a href="${playerLink}" class="player-link player-name" target="_blank">${name}</a></div>
+                            <div class="small-muted">${p.role || ''} ${p.lane || ''}</div>
+                        </div>
+                    </div>
+                    <div class="col-champion">
+                        ${champWrapper}
+                        <div class="col-stats small-muted">
+                            <div>${k}/${d}/${a} (${ratioStr} KDA)</div>
+                            <div>${gold.toLocaleString()}g · ${cs} CS</div>
+                            <div>伤害: ${damage.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div class="col-items">${itemsHtml}</div>
+                </div>`;
+        }
+        // show start/end times and duration above teams
+        let headerTimeHtml = '';
+        try {
+            if (game.gameCreation) {
+                const durationSec = game.gameDuration || 0;
+                const start = new Date(game.gameCreation);
+                const end = new Date(game.gameCreation + (durationSec * 1000));
+                const minutes = Math.floor(durationSec / 60);
+                const seconds = durationSec % 60;
+                headerTimeHtml = `<div class="mb-2 text-muted">时长: ${minutes} 分 ${seconds} 秒 • 开始: ${start.toLocaleString()} • 结束: ${end.toLocaleString()}</div>`;
+            }
+        } catch(e) { headerTimeHtml = ''; }
+        return `
+            <div class="card mt-2">
+                <div class="card-body">
+                    ${headerTimeHtml}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>队伍 1 ${winningTeamId === 100 ? '<span class="badge bg-success ms-2">胜利</span>' : ''}</h6>
+                            ${teamA.map((p,i) => playerHtml(p,i)).join('')}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>队伍 2 ${winningTeamId === 200 ? '<span class="badge bg-success ms-2">胜利</span>' : ''}</h6>
+                            ${teamB.map((p,i) => playerHtml(p,i)).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     // 页面加载时执行

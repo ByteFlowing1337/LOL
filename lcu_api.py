@@ -512,3 +512,118 @@ def get_champ_select_enemies(token, port):
     except Exception as e:
         print(f"解析选人会话失败: {e}")
         return []
+
+
+def get_match_by_id(token, port, match_id):
+    """
+    通过 LCU 的 match history 接口按 match_id 获取完整对局对象。
+    """
+    # Try several known/possible internal endpoints for match detail. Different LCU
+    # or packaged servers may expose different paths. Try them in order and
+    # return the first successful JSON response.
+    candidates = [
+        f"/lol-match-history/v1/matches/{match_id}",
+        f"/lol-match-history/v1/products/lol/matches/{match_id}",
+        f"/lol-match-history/v1/games/{match_id}",
+        f"/lol-match-history/v1/match/{match_id}",
+        f"/match/v1/matches/{match_id}",
+    ]
+
+    for ep in candidates:
+        try:
+            print(f"尝试通过 LCU 端点获取对局: {ep}")
+            res = make_request("GET", ep, token, port)
+            if res:
+                print(f"通过端点 {ep} 成功获取对局")
+                return res
+        except Exception as e:
+            print(f"尝试端点 {ep} 时出现异常: {e}")
+
+    # 如果都失败，打印日志供调试
+    print(f"❌ 无法通过任何已知 LCU 端点获取 match_id={match_id}")
+    return None
+
+
+def get_summoner_by_id(token, port, summoner_id):
+    """通过 summonerId 获取召唤师信息（尝试 LCU 本地接口）"""
+    endpoint = f"/lol-summoner/v1/summoners/{summoner_id}"
+    return make_request("GET", endpoint, token, port)
+
+
+def get_summoner_by_puuid(token, port, puuid):
+    """通过 puuid 获取召唤师信息（尝试本地 LCU 接口）"""
+    endpoint = f"/lol-summoner/v1/summoners/by-puuid/{puuid}"
+    return make_request("GET", endpoint, token, port)
+
+
+def get_summoner_by_name(token, port, name):
+    """通过召唤师名字查询（使用 ?name= 查询，LCU 返回可能是字典）"""
+    endpoint = "/lol-summoner/v1/summoners"
+    return make_request("GET", endpoint, token, port, params={'name': name})
+
+
+def enrich_game_with_summoner_info(token, port, game):
+    """
+    尝试为 game['participants'] 中的每个参与者填充缺失的 summonerName / profileIcon / puuid
+    该方法会就地修改 game 对象并返回它。
+    """
+    if not game or not isinstance(game, dict):
+        return game
+
+    participants = game.get('participants') or []
+    # Build map from participantIdentities for fallback name/icon data
+    idents = {}
+    for ident in (game.get('participantIdentities') or []):
+        pid = ident.get('participantId')
+        player = ident.get('player') or {}
+        if pid is not None:
+            idents[pid] = player
+    for p in participants:
+        try:
+            # skip if already has readable summonerName
+            if p.get('summonerName'):
+                continue
+
+            info = None
+            # try by puuid
+            puuid = p.get('puuid') or (p.get('player') or {}).get('puuid')
+            if puuid:
+                info = get_summoner_by_puuid(token, port, puuid)
+
+            # try by summonerId
+            if not info:
+                sid = p.get('summonerId') or (p.get('player') or {}).get('summonerId')
+                if sid:
+                    info = get_summoner_by_id(token, port, sid)
+
+            # try by name
+            if not info:
+                name = p.get('summonerName') or (p.get('player') or {}).get('summonerName')
+                if name:
+                    info = get_summoner_by_name(token, port, name)
+
+            if info and isinstance(info, dict):
+                # normalize possible keys
+                p['summonerName'] = info.get('displayName') or info.get('summonerName') or info.get('gameName') or p.get('summonerName')
+                if 'profileIconId' in info:
+                    p['profileIcon'] = info.get('profileIconId')
+                elif 'profileIcon' in info:
+                    p['profileIcon'] = info.get('profileIcon')
+                if 'puuid' in info:
+                    p['puuid'] = info.get('puuid')
+            # fallback: use participantIdentities mapping if present
+            if (not p.get('summonerName')) and p.get('participantId') and idents.get(p.get('participantId')):
+                player = idents.get(p.get('participantId')) or {}
+                game_name = (player.get('gameName') or player.get('summonerName')) or ''
+                tag = player.get('tagLine')
+                if game_name:
+                    p['summonerName'] = f"{game_name}{('#'+tag) if tag else ''}"
+                if player.get('profileIcon') is not None and not p.get('profileIcon'):
+                    p['profileIcon'] = player.get('profileIcon')
+                if player.get('puuid') and not p.get('puuid'):
+                    p['puuid'] = player.get('puuid')
+        except Exception as e:
+            print(f"enrich participant failed: {e}")
+
+    # also handle alternative participant structures (e.g., metadata or participants under different keys)
+    return game

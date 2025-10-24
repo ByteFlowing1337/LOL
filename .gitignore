@@ -12,3 +12,4 @@ env/
 *.egg-info/
 *.egg
 *.whl
+/runs
