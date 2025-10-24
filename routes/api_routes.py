@@ -103,8 +103,9 @@ def get_history():
                 "message": f"找不到召唤师 '{summoner_name}' 或 LCU API 失败"
             })
 
-    # 🚀 优化：支持自定义查询数量（默认100场，最多200场）
-    count = request.args.get('count', 100, type=int)
+    # 🚀 优化：默认只查询 20 场（页面只显示20场），支持自定义查询数量
+    # 用户如果需要更多历史记录，可以通过 count 参数指定（最多200场）
+    count = request.args.get('count', 20, type=int)  # 默认从100改为20
     count = min(max(count, 1), 200)  # 限制在1-200之间
     
     # 获取战绩
@@ -172,7 +173,10 @@ def get_match():
     if not puuid:
         return jsonify({"success": False, "message": f"找不到召唤师 '{summoner_name}' 或 LCU API 失败"}), 404
 
-    history = lcu.get_match_history(token, port, puuid, count=100)
+    # 🚀 优化：只查询必要的战绩数量（index+10场作为缓冲）
+    # 如果 index=0，查询20场；index=10，查询30场，以此类推
+    fetch_count = min(index + 20, 200)  # 最多200场
+    history = lcu.get_match_history(token, port, puuid, count=fetch_count)
     if not history:
         return jsonify({"success": False, "message": "获取战绩失败"}), 500
 
