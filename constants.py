@@ -73,7 +73,7 @@ CHAMPION_MAP = {
 64: "LeeSin",89: "Leona",876: "Lrgillia",127: "Lissandra",236: "Lucian",117: "Lulu",99: "Lux",54: "Malphite",90: "Malzahar",57: "Maokai",11: "MasterYi",
 800: "Mel",902: "Milio",21: "MissFortune",62: "Wukong",82: "Mordekaiser",25: "Morgana",950: "Naafiri",267: "Nami",75: "Nasus",111: "Nautilus",518: "Neeko",
 76: "Nidalee",895: "Nilah",56: "Nocturne",20: "Nunu",2: "Olaf",61: "Orianna",516: "Ornn",80: "Pantheon",78: "Poppy",555: "Pyke",246: "Qiyana",133: "Quinn",497: "Rakan",33: "Rammus",
-421: "Rek'Sai",526: "Rell",888: "Renata",58: "Renekton",107: "Rengar",92: "Riven",68: "Rumble",13: "Ryze",360: "Samira",113: "Sejuani",235: "Senna",147: "Seraphine",
+421: "RekSai",526: "Rell",888: "Renata",58: "Renekton",107: "Rengar",92: "Riven",68: "Rumble",13: "Ryze",360: "Samira",113: "Sejuani",235: "Senna",147: "Seraphine",
 875: "Sett",35: "Shaco",98: "Shen",102: "Shyvana",27: "Singed",14: "Sion",15: "Sivir",72: "Skarner",901: "Smolder",37: "Sona",16: "Soraka",50: "Swain",517: "Sylas",
 134: "Syndra",223: "Tahm Kench",163: "Taliyah",91: "Talon",44: "Taric",17: "Teemo",412: "Thresh",18: "Tristana",48: "Trundle",23: "Tryndamere",
 4: "TwistedFate",29: "Twitch",77: "Udyr",6: "Uot",110: "Varus",67: "Vayne",45: "Veigar",161: "VelKoz",711: "Vex",254: "Vi",234: "Viego",112: "Viktor",

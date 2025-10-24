@@ -44,14 +44,14 @@ def auto_analyze_task(socketio):
                             time.sleep(3)  # 失败后等待3秒重试
                     else:
                         # 达到最大重试次数
-                        socketio.emit('status_update', {'message': '❌ 无法获取敌方信息，已停止重试'})
+                        socketio.emit('status_update', {'type': 'biz', 'message': '❌ 无法获取敌方信息，已停止重试'})
                         app_state.enemy_analysis_done = True
                         print(f"❌ 达到最大重试次数 ({MAX_ENEMY_RETRIES})，停止尝试")
                 
                 # EndOfGame 阶段：显示提示
                 elif phase == "EndOfGame":
                     if app_state.teammate_analysis_done or app_state.enemy_analysis_done:
-                        socketio.emit('status_update', {'message': '🏁 比赛结束，等待下一局...'})
+                        socketio.emit('status_update', {'type': 'biz', 'message': '🏁 比赛结束，等待下一局...'})
                         print("🏁 游戏结束")
                 
                 # 更新上一次的阶段
@@ -59,7 +59,7 @@ def auto_analyze_task(socketio):
 
             except Exception as e:
                 error_msg = f'敌我分析任务出错: {str(e)}'
-                socketio.emit('status_update', {'message': f'❌ {error_msg}'})
+                socketio.emit('status_update', {'type': 'biz', 'message': f'❌ {error_msg}'})
                 print(f"❌ 异常: {error_msg}")
                 time.sleep(5)
             
@@ -96,7 +96,7 @@ def _analyze_teammates(token, port, socketio):
         
         if teammates:
             socketio.emit('teammates_found', {'teammates': teammates})
-            socketio.emit('status_update', {'message': f'👥 发现 {len(teammates)} 名队友，开始分析战绩...'})
+            socketio.emit('status_update', {'type': 'biz', 'message': f'👥 发现 {len(teammates)} 名队友，开始分析战绩...'})
             app_state.teammate_analysis_done = True
             print(f"✅ 队友分析完成，共 {len(teammates)} 人")
             print(f"📝 记录队友PUUID集合: {len(app_state.current_teammates)} 人")
@@ -116,7 +116,7 @@ def _analyze_enemies(token, port, socketio, retry_count, max_retries):
     Returns:
         bool: 是否成功
     """
-    socketio.emit('status_update', {'message': f'🔍 正在获取敌方信息... (尝试 {retry_count}/{max_retries})'})
+    socketio.emit('status_update', {'type': 'biz', 'message': f'🔍 正在获取敌方信息... (尝试 {retry_count}/{max_retries})'})
     print(f"开始第 {retry_count} 次尝试获取敌方信息")
     
     # 调用API获取所有玩家（通过team字段区分敌我：ORDER vs CHAOS）
@@ -137,7 +137,7 @@ def _analyze_enemies(token, port, socketio, retry_count, max_retries):
         
         if len(enemies) > 0:
             socketio.emit('enemies_found', {'enemies': enemies})
-            socketio.emit('status_update', {'message': f'💥 发现 {len(enemies)} 名敌人，开始分析战绩...'})
+            socketio.emit('status_update', {'type': 'biz', 'message': f'💥 发现 {len(enemies)} 名敌人，开始分析战绩...'})
             app_state.enemy_analysis_done = True
             print(f"✅ 敌人分析完成，共 {len(enemies)} 人")
             return True

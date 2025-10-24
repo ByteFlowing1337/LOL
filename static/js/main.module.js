@@ -20,18 +20,18 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('成功连接到WebSocket服务器!');
         },
         onStatusUpdate(data) {
+            // Expect structured payload: { type: 'lcu'|'biz', message: '...' }
+            const type = data.type || (data.data ? 'lcu' : 'biz');
             const message = data.message || data.data || '';
-            // determine if message is about connection
-            const m = (typeof message === 'string') ? message : '';
-            const isConn = m.includes('LCU') || m.includes('凭证') || m.includes('端口') || m.includes('连接');
-            if (isConn) {
-                // set LCU display
-                if (m.includes('成功')) setLCUStatus(m, 'ok');
-                else if (m.includes('失败') || m.includes('无法')) setLCUStatus(m, 'err');
-                else setLCUStatus(m, 'neutral');
+
+            if (type === 'lcu') {
+                // connection-related message -> update LCU status box
+                if (message.includes('成功')) setLCUStatus(message, 'ok');
+                else if (message.includes('失败') || message.includes('无法')) setLCUStatus(message, 'err');
+                else setLCUStatus(message, 'neutral');
             } else {
                 // business message -> realtime area
-                showInlineMessage(m || message, { level: 'info', timeout: 5000 });
+                showInlineMessage(message, { level: 'info', timeout: 5000 });
             }
         },
         onEnemiesFound: async (data) => {

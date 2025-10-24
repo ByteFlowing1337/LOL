@@ -25,11 +25,11 @@ def auto_accept_task(socketio):
                 if phase == "ReadyCheck":
                     try:
                         lcu_api.accept_ready_check(token, port)
-                        socketio.emit('status_update', {'message': '✅ 已自动接受对局!'})
+                        socketio.emit('status_update', {'type': 'biz', 'message': '✅ 已自动接受对局!'})
                         print("✅ 自动接受对局成功")
                     except Exception as accept_error:
                         print(f"⚠️ 自动接受对局失败: {accept_error}")
-                        socketio.emit('status_update', {'message': f'⚠️ 自动接受失败: {accept_error}'})
+                        socketio.emit('status_update', {'type': 'biz', 'message': f'⚠️ 自动接受失败: {accept_error}'})
                 
             except Exception as e:
                 print(f"❌ 自动接受任务异常: {e}")

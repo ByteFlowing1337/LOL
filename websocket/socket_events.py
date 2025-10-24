@@ -25,7 +25,8 @@ class SocketIOMessageProxy:
     
     def showMessage(self, message):
         """发送状态消息到前端"""
-        self.socketio.emit('status_update', {'data': message})
+        # Emit structured status: type 'lcu' for connection-related messages
+        self.socketio.emit('status_update', {'type': 'lcu', 'message': message})
         print(f"[LCU连接] {message}")
 
 
@@ -53,7 +54,7 @@ def register_socket_events(socketio):
         with thread_lock:
             # Require LCU connection before starting auto-accept
             if not app_state.is_lcu_connected():
-                emit('status_update', {'message': '❌ 无法启动自动接受：未连接到LCU'})
+                emit('status_update', {'type': 'biz', 'message': '❌ 无法启动自动接受：未连接到LCU'})
                 print("❌ 尝试启动自动接受失败：LCU 未连接")
                 return
 
@@ -65,10 +66,10 @@ def register_socket_events(socketio):
                     daemon=True
                 )
                 app_state.auto_accept_thread.start()
-                emit('status_update', {'message': '✅ 自动接受对局功能已开启'})
+                emit('status_update', {'type': 'biz', 'message': '✅ 自动接受对局功能已开启'})
                 print("🎮 自动接受对局功能已启动")
             else:
-                emit('status_update', {'message': '⚠️ 自动接受功能已在运行中'})
+                emit('status_update', {'type': 'biz', 'message': '⚠️ 自动接受功能已在运行中'})
     
     @socketio.on('start_auto_analyze')
     def handle_start_auto_analyze():
@@ -76,7 +77,7 @@ def register_socket_events(socketio):
         with thread_lock:
             # Require LCU connection before starting auto-analyze
             if not app_state.is_lcu_connected():
-                emit('status_update', {'message': '❌ 无法启动敌我分析：未连接到LCU'})
+                emit('status_update', {'type': 'biz', 'message': '❌ 无法启动敌我分析：未连接到LCU'})
                 print("❌ 尝试启动敌我分析失败：LCU 未连接")
                 return
 
@@ -88,10 +89,10 @@ def register_socket_events(socketio):
                     daemon=True
                 )
                 app_state.auto_analyze_thread.start()
-                emit('status_update', {'message': '✅ 敌我分析功能已开启'})
+                emit('status_update', {'type': 'biz', 'message': '✅ 敌我分析功能已开启'})
                 print("🔍 敌我分析功能已启动")
             else:
-                emit('status_update', {'message': '⚠️ 敌我分析功能已在运行中'})
+                emit('status_update', {'type': 'biz', 'message': '⚠️ 敌我分析功能已在运行中'})
     
  
     
