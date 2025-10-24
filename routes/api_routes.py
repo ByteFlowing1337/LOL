@@ -5,7 +5,7 @@ API路由模块
 from flask import Blueprint, render_template, jsonify, request
 from config import app_state
 from constants import CHAMPION_MAP
-import lcu_api
+from core import lcu
 from utils.game_data_formatter import format_game_data
 import requests
 import urllib3
@@ -104,7 +104,7 @@ def get_history():
     token = app_state.lcu_credentials["auth_token"]
     port = app_state.lcu_credentials["app_port"]
     if not puuid:
-        puuid = lcu_api.get_puuid(token, port, summoner_name)
+        puuid = lcu.get_puuid(token, port, summoner_name)
         if not puuid:
             return jsonify({
                 "success": False,
@@ -116,7 +116,7 @@ def get_history():
     count = min(max(count, 1), 200)  # 限制在1-200之间
     
     # 获取战绩
-    history = lcu_api.get_match_history(token, port, puuid, count=count)
+    history = lcu.get_match_history(token, port, puuid, count=count)
     if not history:
         return jsonify({
             "success": False,
@@ -154,14 +154,14 @@ def get_match():
             return jsonify({"success": False, "message": "未连接到客户端"}), 400
         token = app_state.lcu_credentials["auth_token"]
         port = app_state.lcu_credentials["app_port"]
-        match_obj = lcu_api.get_match_by_id(token, port, match_id)
+        match_obj = lcu.get_match_by_id(token, port, match_id)
         if match_obj:
             # Some LCU endpoints return a wrapper with a nested 'game' object.
             # Normalize so we always return the inner game dict and run enrichment
             # to fill missing summonerName / profileIcon before returning.
             game = match_obj.get('game') if (isinstance(match_obj, dict) and 'game' in match_obj) else match_obj
             try:
-                lcu_api.enrich_game_with_summoner_info(token, port, game)
+                lcu.enrich_game_with_summoner_info(token, port, game)
             except Exception as e:
                 print(f"召唤师信息补全失败 (match_id path): {e}")
             return jsonify({"success": True, "game": game})
@@ -176,11 +176,11 @@ def get_match():
 
     token = app_state.lcu_credentials["auth_token"]
     port = app_state.lcu_credentials["app_port"]
-    puuid = lcu_api.get_puuid(token, port, summoner_name)
+    puuid = lcu.get_puuid(token, port, summoner_name)
     if not puuid:
         return jsonify({"success": False, "message": f"找不到召唤师 '{summoner_name}' 或 LCU API 失败"}), 404
 
-    history = lcu_api.get_match_history(token, port, puuid, count=100)
+    history = lcu.get_match_history(token, port, puuid, count=100)
     if not history:
         return jsonify({"success": False, "message": "获取战绩失败"}), 500
 
@@ -194,7 +194,7 @@ def get_match():
     try:
         lcu_token = token
         lcu_port = port
-        lcu_api.enrich_game_with_summoner_info(lcu_token, lcu_port, game)
+        lcu.enrich_game_with_summoner_info(lcu_token, lcu_port, game)
     except Exception as e:
         # enrichment 是 best-effort，不应阻塞主响应
         print(f"召唤师信息补全失败: {e}")

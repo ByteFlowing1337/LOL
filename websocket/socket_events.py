@@ -5,6 +5,7 @@ import threading
 from flask_socketio import emit
 from config import app_state
 from services import auto_accept_task, auto_analyze_task
+from core import lcu
 try:
     # vision-related services were removed; provide no-op placeholders to keep imports safe
     from services.vision_service import vision_detection_task, capture_screenshot_task  # type: ignore
@@ -14,7 +15,6 @@ except Exception:
 
     def capture_screenshot_task(*args, **kwargs):
         print("capture_screenshot_task is not available (feature removed)")
-import lcu_api
 
 
 class SocketIOMessageProxy:
@@ -109,7 +109,7 @@ def _detect_and_connect_lcu(socketio, status_proxy):
     """
     status_proxy.showMessage("正在自动检测英雄联盟客户端 (进程和凭证)...")
     
-    token, port = lcu_api.autodetect_credentials(status_proxy)
+    token, port = lcu.autodetect_credentials(status_proxy)
 
     if token and port:
         app_state.lcu_credentials["auth_token"] = token

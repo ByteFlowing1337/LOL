@@ -3,7 +3,7 @@
 """
 import time
 from config import app_state
-import lcu_api
+from core import lcu
 
 
 def auto_accept_task(socketio):
@@ -19,12 +19,12 @@ def auto_accept_task(socketio):
                 token = app_state.lcu_credentials["auth_token"]
                 port = app_state.lcu_credentials["app_port"]
                 
-                phase = lcu_api.get_gameflow_phase(token, port)
+                phase = lcu.get_gameflow_phase(token, port)
                 
                 # ReadyCheck 阶段：自动接受对局
                 if phase == "ReadyCheck":
                     try:
-                        lcu_api.accept_ready_check(token, port)
+                        lcu.accept_ready_check(token, port)
                         socketio.emit('status_update', {'type': 'biz', 'message': '✅ 已自动接受对局!'})
                         print("✅ 自动接受对局成功")
                     except Exception as accept_error:

@@ -3,7 +3,7 @@
 """
 import time
 from config import app_state
-import lcu_api
+from core import lcu
 
 
 def auto_analyze_task(socketio):
@@ -23,7 +23,7 @@ def auto_analyze_task(socketio):
                 token = app_state.lcu_credentials["auth_token"]
                 port = app_state.lcu_credentials["app_port"]
                 
-                phase = lcu_api.get_gameflow_phase(token, port)
+                phase = lcu.get_gameflow_phase(token, port)
                 
                 # 检测到新的游戏流程开始，重置状态
                 if last_phase in ["Lobby", "None", None] and phase not in ["Lobby", "None"]:
@@ -81,7 +81,7 @@ def _analyze_teammates(token, port, socketio):
         port: LCU端口
         socketio: SocketIO实例
     """
-    session = lcu_api.get_champ_select_session(token, port)
+    session = lcu.get_champ_select_session(token, port)
     if session:
         teammates = []
         for team_member in session.get('myTeam', []):
@@ -120,7 +120,7 @@ def _analyze_enemies(token, port, socketio, retry_count, max_retries):
     print(f"开始第 {retry_count} 次尝试获取敌方信息")
     
     # 调用API获取所有玩家（通过team字段区分敌我：ORDER vs CHAOS）
-    players_data = lcu_api.get_all_players_from_game(token, port)
+    players_data = lcu.get_all_players_from_game(token, port)
     
     if players_data:
         enemies = players_data.get('enemies', [])
