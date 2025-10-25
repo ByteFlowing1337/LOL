@@ -171,8 +171,8 @@ AUGMENT_ID_TO_NAME = {
     1302: 'gohsacrificefor', 1303: 'gohsacrificeforgold', 1304: 'gohsacrificeforprismatic', 1305: 'legday', 1308: 'firfox',
     1309: 'andmyaxe', 1310: 'clowncollege', 1311: 'overflow', 1312: 'wellberightback', 1313: 'tank_engine',
     1317: 'pandoras_box', 1318: 'mad_hatter', 1319: 'threesacredtreasures', 1320: 'calculated_risk', 1321: 'bodyguard',
-    1322: 'augmented_power', 1323: 'cerberus', 1324: 'bravestofthebrave', 1326: 'spirit_infusion', 1404: 'augment404',
-    1405: 'augment405',
+    1322: 'augmented_power', 1323: 'cerberus', 1324: 'bravestofthebrave', 1326: 'spirit_infusion', 1335: 'goldrend',
+    1349: 'ultimateawakening', 1404: 'augment404', 1405: 'augment405',
 }
 
 # ID到中文信息的映射（名称和描述）
@@ -952,6 +952,14 @@ AUGMENT_ID_TO_INFO = {
     1326: {
         'name': '灵之灌注',
         'desc': '获得治疗和护盾强度，这个效果在低生命值时会提升。在施放终极技能时，将你的治疗和护盾强度翻倍。'
+    },
+    1335: {
+        'name': '夺金',
+        'desc': '使用攻击或技能对敌方英雄造成伤害时，额外造成50-150（+20%法术强度，+40%基础攻击力）的魔法伤害，同时获得15金币与25%移动速度（持续1.5秒）；每个敌方英雄有30秒冷却时间（对不同英雄可分别触发）。'
+    },
+    1349: {
+        'name': '终极觉醒',
+        'desc': '使用大招后，重置所有基础技能冷却时间（冷却时间10秒）。'
     },
     1404: {
         'name': '404 强化符文未找到',

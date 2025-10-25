@@ -85,6 +85,11 @@
             transform: translateX(5px);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        /* KIWI 模式紫色徽章 */
+        .bg-purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
@@ -244,6 +249,22 @@
         return mostPlayed ? `${mostPlayed[0]} (${mostPlayed[1]}场)` : 'N/A';
     }
 
+    // 游戏模式名称映射
+    function getModeName(mode) {
+        const modeMap = {
+            'CLASSIC': '经典模式',
+            'ARAM': '极地大乱斗',
+            'KIWI': '海克斯大乱斗',
+            'CHERRY': '斗魂竞技场',
+            'URF': '无限火力',
+            'ONEFORALL': '克隆模式',
+            'NEXUSBLITZ': '激斗峡谷',
+            'TUTORIAL': '教程',
+            'PRACTICETOOL': '训练模式'
+        };
+        return modeMap[mode] || mode;
+    }
+
     function displayGames(games, container) {
         // keep games globally so toggleMatchDetails can access them
         window._games = games;
@@ -291,8 +312,8 @@
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="bi bi-${winIcon} me-2 fs-5"></i>
                                     <h5 class="mb-0 fw-bold">${winText}</h5>
-                                    <span class="badge ${isCherryMode ? 'bg-info' : 'bg-secondary'} ms-2">
-                                        ${isCherryMode ? '斗魂竞技场' : game.mode}
+                                    <span class="badge ${isCherryMode ? 'bg-info' : ((game.gameMode === 'KIWI' || game.mode === 'KIWI') ? 'bg-purple' : 'bg-secondary')} ms-2">
+                                        ${getModeName(game.gameMode || game.mode)}
                                     </span>
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">

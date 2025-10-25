@@ -47,9 +47,24 @@ def summoner_detail(summoner_name):
 
 @api_bp.route('/match/<path:summoner_name>/<int:game_index>')
 def match_detail_page(summoner_name, game_index):
-    """渲染单场对局详情页面（前端将调用 /get_match 获取具体数据）"""
+    """
+    渲染单场对局详情页面
+    
+    支持两种访问方式：
+    1. /match/召唤师名/索引 - 通过战绩列表索引访问
+    2. /match/召唤师名/索引?match_id=xxx - 通过对局ID直接访问（更快）
+    """
+    # 获取可选的 match_id 参数（如果提供，可以直接查询对局，无需先查战绩）
+    match_id = request.args.get('match_id')
+    
     # pass champion map so the template can resolve championId -> champion key
-    return render_template('match_detail.html', summoner_name=summoner_name, game_index=game_index, champion_map=CHAMPION_MAP)
+    return render_template(
+        'match_detail.html', 
+        summoner_name=summoner_name, 
+        game_index=game_index, 
+        match_id=match_id,
+        champion_map=CHAMPION_MAP
+    )
 
 
 @api_bp.route('/live_game')
@@ -308,7 +323,7 @@ def _format_game_mode(mode):
     mode_map = {
         'CLASSIC': '经典模式',
         'ARAM': '极地大乱斗',
-        'KIWI': '大乱斗',
+        'KIWI': '海克斯大乱斗',
         'CHERRY': '斗魂竞技场',
         'URF': '无限火力',
         'ONEFORALL': '克隆模式',
