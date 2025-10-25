@@ -510,7 +510,7 @@
                         <span class="badge ${isWinning ? 'bg-success' : 'bg-secondary'}">
                             ${rankEmoji} 排名 ${subteam.placement}
                         </span>
-                        <span class="badge bg-info ms-2">子队 ${subteam.subteamId}</span>
+                        <!-- 子队信息已移除 -->
                     </h5>
                 </div>
                 ${subteam.players.map(p => renderPlayerCard(p)).join('')}

@@ -36,6 +36,29 @@
             border: 1px solid #ddd;
             margin: 2px;
         }
+        /* Ensure the left avatar, middle info and right meta align vertically
+           even if augment icons or names have variable lengths. */
+        .card.game-card .card-body .row > div {
+            display: flex;
+            align-items: center;
+        }
+        /* Left column: fixed width avatar area */
+        .card.game-card .col-md-2 { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .champion-icon { width: 60px; height: 60px; flex: 0 0 60px; }
+        .champion-wrapper { width: 60px; height: 60px; }
+
+        /* Middle column: allow content to stack and truncate long names */
+        .card.game-card .col-md-6 { display: flex; flex-direction: column; justify-content: center; }
+        .card.game-card .col-md-6 .fw-bold { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .augments-row { min-height: 28px; }
+
+        /* Right column: align meta to the right and center vertically */
+        .card.game-card .col-md-4 { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; }
+        .stats-badge { white-space: nowrap; }
+
+        /* Prevent augment icons from growing the row height */
+        .augment-icon { width: 24px; height: 24px; flex: 0 0 24px; }
+        .augments-container { max-width: 420px; overflow: hidden; }
         .augment-icon {
             width: 24px;
             height: 24px;
@@ -275,13 +298,10 @@
             // CHERRY 模式：使用排名判断胜负
             let winClass, winText, winIcon;
             if (isCherryMode) {
-                const placement = game.subteamPlacement || 0;
-                const isTop4 = placement > 0 && placement <= 4;
-                winClass = isTop4 ? 'win-bg' : 'loss-bg';
-                
-                const rankEmoji = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'][placement - 1] || `#${placement}`;
-                winText = isTop4 ? `${rankEmoji} 第${placement}名` : `${rankEmoji} 第${placement}名`;
-                winIcon = isTop4 ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
+                // 不再显示子队/排名，仅标识为斗魂竞技场并使用 win 字段判断胜负（如果可用）
+                winClass = game.win ? 'win-bg' : 'loss-bg';
+                winText = '斗魂竞技场';
+                winIcon = game.win ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
             } else {
                 // 普通模式
                 winClass = game.win ? 'win-bg' : 'loss-bg';
