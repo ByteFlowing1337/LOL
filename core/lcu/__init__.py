@@ -46,12 +46,14 @@ from .summoner import (
     get_puuid,
     get_summoner_by_id,
     get_summoner_by_puuid,
-    get_summoner_by_name
+    get_summoner_by_name,
+    get_ranked_stats
 )
 
 # 战绩查询
 from .match_history import (
     get_match_history,
+    get_tft_match_history,
     get_match_by_id
 )
 
@@ -64,7 +66,7 @@ from .live_game import (
 )
 
 # 数据增强
-from .enrichment import enrich_game_with_summoner_info
+from .enrichment import enrich_game_with_summoner_info, enrich_tft_game_with_summoner_info
 
 __all__ = [
     # 凭证检测
@@ -89,9 +91,11 @@ __all__ = [
     'get_summoner_by_id',
     'get_summoner_by_puuid',
     'get_summoner_by_name',
+    'get_ranked_stats',
     
     # 战绩查询
     'get_match_history',
+    'get_tft_match_history',
     'get_match_by_id',
     
     # 游戏内实时数据
@@ -102,4 +106,5 @@ __all__ = [
     
     # 数据增强
     'enrich_game_with_summoner_info',
+    'enrich_tft_game_with_summoner_info',
 ]

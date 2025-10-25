@@ -1,11 +1,12 @@
 // main.js - module entrypoint (ES Module)
 import { showInlineMessage, isLCUConnected, setLCUStatus, qs } from './modules/ui.js';
-import { fetchSummonerStats } from './modules/api.js';
+import { fetchSummonerStats, fetchTFTMatches } from './modules/api.js';
 import { setupSocket } from './modules/socketHandler.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const detectBtn = qs('detect-btn');
     const fetchBtn = qs('fetch-btn');
+    const fetchTftBtn = qs('fetch-tft-btn');
     const summonerNameInput = qs('summoner-name-input');
     const resultsDiv = qs('results-area');
     const autoAcceptBtn = qs('auto-accept-btn');
@@ -124,6 +125,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Open summoner detail in a new tab instead of replacing current page
         window.open(`/summoner/${encodedName}`, '_blank', 'noopener');
     });
+
+    if (fetchTftBtn) {
+        fetchTftBtn.addEventListener('click', () => {
+            const summonerName = summonerNameInput.value.trim();
+            if (!summonerName) {
+                showInlineMessage('请输入召唤师名称 (格式: 名称#Tag)', { level: 'warn' });
+                return;
+            }
+            const encodedName = encodeURIComponent(summonerName);
+            // open a dedicated TFT summoner page in a new tab
+            window.open(`/tft_summoner/${encodedName}`, '_blank', 'noopener');
+        });
+    }
 
     autoAcceptBtn.addEventListener('click', () => {
         if (!isLCUConnected()) {

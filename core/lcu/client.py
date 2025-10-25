@@ -67,7 +67,8 @@ def make_request(method, endpoint, token, port, **kwargs):
     except requests.exceptions.HTTPError as e:
         # 🔇 静默处理404错误（端点尝试时很常见），只记录其他错误
         if e.response.status_code != 404:
-            print(f"⚠️ LCU API 错误 ({method} {endpoint}): {e.response.status_code} {e.response.reason}")
+            # Print full URL to help diagnose path/encoding issues
+            print(f"⚠️ LCU API 错误 ({method} {endpoint}) -> URL: {url} : {e.response.status_code} {e.response.reason}")
             
             # 打印 403 错误的详细信息
             if e.response.status_code == 403:
@@ -77,5 +78,5 @@ def make_request(method, endpoint, token, port, **kwargs):
         
     except requests.exceptions.RequestException as e:
         # 处理其他请求异常（如连接超时、DNS 错误）
-        print(f"⚠️ LCU API 请求异常 ({method} {endpoint}): {e}")
+        print(f"⚠️ LCU API 请求异常 ({method} {endpoint}) -> URL: {url} : {e}")
         return None

@@ -151,3 +151,24 @@ def get_summoner_by_name(token, port, name):
     """
     endpoint = "/lol-summoner/v1/summoners"
     return make_request("GET", endpoint, token, port, params={'name': name})
+
+
+def get_ranked_stats(token, port, summoner_id):
+    """
+    获取召唤师排位信息。
+    
+    通过召唤师ID获取其排位数据，包括单/双排和灵活排位的段位、分区、胜点等。
+    
+    Args:
+        token: LCU认证令牌
+        port: LCU端口
+        summoner_id: 召唤师ID
+    
+    Returns:
+        dict: 排位信息，包含 RANKED_SOLO_5x5 和 RANKED_FLEX_SR 等队列数据
+              如果未查询到数据则返回空字典
+    """
+    endpoint = f"/lol-ranked/v1/ranked-stats/{summoner_id}"
+    result = make_request("GET", endpoint, token, port)
+    return result if result else {}
+

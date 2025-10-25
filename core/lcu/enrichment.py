@@ -46,8 +46,17 @@ def enrich_game_with_summoner_info(token, port, game):
     for p in participants:
         try:
             # 如果已有可读的 summonerName，跳过
+            # Ensure summonerName exists if riotId fields are present
+            if not p.get('summonerName'):
+                # prefer Riot game name + tagline if available
+                game_name = p.get('riotIdGameName') or p.get('riotId') or None
+                tag_line = p.get('riotIdTagline') or p.get('riotTagLine') or ''
+                if game_name:
+                    p['summonerName'] = f"{game_name}#{tag_line}" if tag_line else game_name
+
             if p.get('summonerName'):
-                continue
+                # already have a readable name — but we may still try to fill profileIcon below
+                pass
 
             info = None
             
@@ -105,6 +114,75 @@ def enrich_game_with_summoner_info(token, port, game):
                     
         except Exception as e:
             print(f"enrich参与者信息失败: {e}")
+            continue
+
+    return game
+
+
+def enrich_tft_game_with_summoner_info(token, port, game):
+    """
+    为 TFT 游戏数据填充召唤师信息
+    
+    TFT 数据结构: game['json']['participants']
+    
+    Args:
+        token: LCU认证令牌
+        port: LCU端口
+        game: TFT 游戏数据对象（dict）
+    
+    Returns:
+        dict: 增强后的游戏数据（就地修改并返回）
+    """
+    if not game or not isinstance(game, dict):
+        return game
+    
+    # TFT 参与者在 json.participants 中
+    game_json = game.get('json', game)
+    if not isinstance(game_json, dict):
+        return game
+    
+    participants = game_json.get('participants') or []
+    
+    # 遍历每个参与者，填充缺失信息
+    for p in participants:
+        try:
+            # 如果没有 summonerName，先尝试从 riotId 字段构造一个可读名称
+            if not p.get('summonerName'):
+                rn = p.get('riotIdGameName') or p.get('riotId') or None
+                rt = p.get('riotIdTagline') or p.get('riotTagLine') or ''
+                if rn:
+                    p['summonerName'] = f"{rn}#{rt}" if rt else rn
+
+            info = None
+
+            # 方法1: 尝试通过 puuid 查询以获取更完整的召唤师信息（头像等）
+            puuid = p.get('puuid') or (p.get('player') or {}).get('puuid')
+            if puuid:
+                info = get_summoner_by_puuid(token, port, puuid)
+
+            # 如果查询成功，填充数据（包括头像）
+            if info and isinstance(info, dict):
+                # 标准化可能的字段名
+                game_name = info.get('gameName') or info.get('displayName') or info.get('summonerName') or ''
+                tag_line = info.get('tagLine') or info.get('tagline') or ''
+
+                if game_name:
+                    p['summonerName'] = f"{game_name}#{tag_line}" if tag_line else game_name
+                    p['riotIdGameName'] = game_name
+                    p['riotIdTagline'] = tag_line
+
+                # 填充头像ID（优先 profileIconId）
+                if 'profileIconId' in info and info.get('profileIconId') is not None:
+                    p['profileIcon'] = info.get('profileIconId')
+                elif 'profileIcon' in info and info.get('profileIcon') is not None:
+                    p['profileIcon'] = info.get('profileIcon')
+
+                # 确保 puuid 存在
+                if 'puuid' in info and info.get('puuid'):
+                    p['puuid'] = info.get('puuid')
+                    
+        except Exception as e:
+            print(f"[TFT] enrich参与者信息失败: {e}")
             continue
 
     return game

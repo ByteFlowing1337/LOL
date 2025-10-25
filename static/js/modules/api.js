@@ -72,4 +72,54 @@ export async function fetchSummonerStats(gameName, tagLine, displayElement, coun
     }
 }
 
-export default { fetchSummonerStats };
+export async function fetchTFTMatches(gameName, tagLine, displayElement, count = 20) {
+    const apiEndpoint = '/get_tft_history';
+    const fullRiotId = `${gameName}#${tagLine}`;
+    const encodedRiotId = encodeURIComponent(fullRiotId);
+
+    try {
+        const response = await fetch(`${apiEndpoint}?name=${encodedRiotId}&count=${count}`);
+        if (!response.ok) {
+            throw new Error(`HTTP 错误! 状态码: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success && data.games && data.games.length > 0) {
+            const games = data.games;
+            // 简单渲染前三场 TFT 比赛信息
+            const list = document.createElement('div');
+            list.className = 'small';
+            list.innerHTML = `<div class="mb-2"><strong>最近 ${games.length} 场 TFT 比赛（显示前 10 场）</strong></div>`;
+            const showCount = Math.min(games.length, 10);
+            for (let i = 0; i < showCount; i++) {
+                const g = games[i];
+                const row = document.createElement('div');
+                row.className = 'game-item mb-2';
+                row.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${g.mode || g.gameMode}</strong> · ${g.time_ago}
+                        </div>
+                        <div class="text-end">
+                            <div>${g.kda}</div>
+                            <div class="text-muted" style="font-size:0.85em">金币: ${g.gold} · CS: ${g.cs}</div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(row);
+            }
+            displayElement.innerHTML = '';
+            displayElement.appendChild(list);
+        } else if (data.success) {
+            displayElement.innerHTML = `<div class="small text-warning mt-1">📊 无 TFT 战绩数据</div>`;
+        } else {
+            displayElement.innerHTML = `<div class="small text-danger mt-1">❌ ${data.message || '查询失败'}</div>`;
+        }
+
+    } catch (error) {
+        console.error(`获取 ${fullRiotId} TFT 战绩失败:`, error);
+        displayElement.innerHTML = `<div class="small text-danger mt-1">❌ TFT 查询失败</div>`;
+    }
+}
+
+export default { fetchSummonerStats, fetchTFTMatches };

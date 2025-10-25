@@ -11,93 +11,308 @@
     
     <style>
         body {
-            background-color: #f0f2f5;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin-top: 2rem;
             margin-bottom: 2rem;
         }
-        .game-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            margin-bottom: 1rem;
+        
+        /* Header Styling */
+        .header-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 2rem;
         }
-        .game-card:hover {
-            transform: translateY(-3px);
+        .summoner-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid #fff;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .win-bg { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); }
-        .loss-bg { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); }
-        .item-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            margin: 2px;
+        .summoner-level-badge {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+            display: inline-block;
+            margin-top: 8px;
         }
-        /* Ensure the left avatar, middle info and right meta align vertically
-           even if augment icons or names have variable lengths. */
-        .card.game-card .card-body .row > div {
-            display: flex;
+        .ranked-badge {
+            padding: 6px 14px;
+            border-radius: 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 8px;
+            margin-right: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .ranked-badge.iron { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; }
+        .ranked-badge.bronze { background: linear-gradient(135deg, #cd7f32 0%, #8b5a2b 100%); color: white; }
+        .ranked-badge.silver { background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%); color: white; }
+        .ranked-badge.gold { background: linear-gradient(135deg, #ffd700 0%, #daa520 100%); color: #1a202c; }
+        .ranked-badge.platinum { background: linear-gradient(135deg, #00ced1 0%, #008b8b 100%); color: white; }
+        .ranked-badge.emerald { background: linear-gradient(135deg, #50c878 0%, #3cb371 100%); color: white; }
+        .ranked-badge.diamond { background: linear-gradient(135deg, #b9f2ff 0%, #6fa8dc 100%); color: #1a202c; }
+        .ranked-badge.master { background: linear-gradient(135deg, #9b30ff 0%, #7b2cbf 100%); color: white; }
+        .ranked-badge.grandmaster { background: linear-gradient(135deg, #ff4d4d 0%, #c41e3a 100%); color: white; }
+        .ranked-badge.challenger { background: linear-gradient(135deg, #f4c430 0%, #ffdf00 100%); color: #1a202c; box-shadow: 0 3px 15px rgba(244,196,48,0.5); }
+        .ranked-badge.unranked { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; opacity: 0.7; }
+        .stats-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        /* KDA Badge - 防止换行 */
+        .kda-badge {
+            display: inline-flex;
             align-items: center;
-        }
-        /* Left column: fixed width avatar area */
-        .card.game-card .col-md-2 { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .champion-icon { width: 60px; height: 60px; flex: 0 0 60px; }
-        .champion-wrapper { width: 60px; height: 60px; }
-
-        /* Middle column: allow content to stack and truncate long names */
-        .card.game-card .col-md-6 { display: flex; flex-direction: column; justify-content: center; }
-        .card.game-card .col-md-6 .fw-bold { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-        .augments-row { min-height: 28px; }
-
-        /* Right column: align meta to the right and center vertically */
-        .card.game-card .col-md-4 { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; }
-        .stats-badge { white-space: nowrap; }
-
-        /* Prevent augment icons from growing the row height */
-        .augment-icon { width: 24px; height: 24px; flex: 0 0 24px; }
-        .augments-container { max-width: 420px; overflow: hidden; }
-        .augment-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            border: 2px solid #764ba2;
-            margin: 0 2px;
-            box-shadow: 0 2px 4px rgba(118, 75, 162, 0.3);
+            white-space: nowrap;
+            padding: 6px 12px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1px;
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            vertical-align: middle;
+        }
+        .kda-badge i {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        /* Specific Badge Colors */
+        .badge-kda { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; }
+        .badge-ratio-high { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; }
+        .badge-ratio-mid { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; }
+        .badge-ratio-low { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; }
+        .badge-gold { background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); color: #1a202c; }
+        .badge-cs { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); color: white; }
+        
+        /* Items Enhanced */
+        .items-col { 
+            display: flex; 
+            gap: 6px; 
+            align-items: center; 
+            flex-wrap: wrap;
+        }
+        .item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            margin: 2px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            flex-shrink: 0;
+        }
+        .item-icon:hover {
+            transform: scale(1.1);
+        }
+        
+        /* 详情视图中的物品图标 - 更紧凑 */
+        .match-details .item-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            margin: 0 1px;
+            flex-shrink: 0; /* 防止压缩 */
+        }
+        
+        /* Augments Enhanced */
+        .augments-container { 
+            max-width: 500px; 
+            overflow: hidden; 
+        }
+        .augment-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 2px solid #667eea;
+            margin: 0 2px;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2px;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .augment-icon:hover {
+            transform: scale(1.1);
         }
         .augments-row {
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: nowrap; /* 不换行 */
             margin-top: 4px;
+            gap: 2px;
+            max-width: 100%;
+            overflow: hidden;
+            min-height: 24px; /* 固定最小高度 */
         }
-        .champion-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        
+        /* Layout Improvements */
+        .game-card .card-body .row > div {
+            display: flex;
+            align-items: center;
         }
-            .champion-wrapper { position: relative; display: inline-block; }
-            .level-badge { position: absolute; right: -6px; bottom: -6px; background: rgba(0,0,0,0.75); color: #fff; width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:0.85rem; border:2px solid #fff; }
-            .kda-badge { background: linear-gradient(90deg,#ffecb3,#ffd54f); padding:6px 10px; border-radius:8px; font-weight:700; color:#222; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
-            .items-col { display:flex; gap:4px; align-items:center; }
-            .meta-badge { font-size:0.85rem; padding:0.25rem 0.5rem; margin-right:6px; }
-        .stats-badge {
-            font-size: 0.9rem;
-            padding: 0.4rem 0.8rem;
-            margin: 0.2rem;
+        .game-card .col-champion { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            padding-left: 30px !important; /* 向右移动，更靠近中间 */
         }
+        .game-card .col-info { 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+            align-items: center; /* 水平居中对齐 */
+        }
+        .game-card .col-info > div {
+            width: 100%; /* 确保子元素占满宽度 */
+            display: flex;
+            justify-content: center; /* 内容居中 */
+            flex-wrap: wrap;
+        }
+        .game-card .col-meta { 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: flex-end; 
+        }
+        
+        /* Summary Cards */
+        .summary-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+            border: none;
+            margin-bottom: 1rem;
+        }
+        
+        /* Back Button */
         .back-button {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 30px;
+            right: 30px;
             z-index: 1000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
         }
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Loading and Error States */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .champion-icon { width: 60px; height: 60px; }
+            .level-badge { width: 24px; height: 24px; font-size: 0.7rem; }
+            .item-icon { width: 32px; height: 32px; }
+            .augment-icon { width: 24px; height: 24px; }
+            .stats-badge { font-size: 0.75rem; padding: 4px 8px; }
+        }
+        
+        /* Game Detail Stats */
+        .detail-stats {
+            background: linear-gradient(135deg, rgba(26, 35, 126, 0.1) 0%, rgba(74, 20, 140, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            transform: translateX(4px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-label {
+            font-weight: 500;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .stat-label i {
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: #ffd700;
+            background: linear-gradient(45deg, #ffd700 0%, #ffed4e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gold-value {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .damage-bar {
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 3px;
+            overflow: hidden;
+        }
+        
+        .damage-segment {
+            height: 100%;
+            float: left;
+        }
+        
+        .damage-physical { background-color: #d97728; }
+        .damage-magic { background-color: #b833cc; }
+        .damage-true { background-color: #969696; }
+        
+        .player-row:hover .damage-bar {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
         .bg-light-success {
             background-color: #d4edda !important;
         }
@@ -113,21 +328,305 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             color: white !important;
         }
+        
+        /* 详细对局参与者样式 */
+        .match-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #ddd;
+            transition: all 0.2s ease;
+            gap: 15px;
+            width: 100%;
+            min-width: 0; /* 允许flex子项收缩 */
+            position: relative; /* 确保悬停效果不影响布局 */
+            z-index: 1; /* 基础层级 */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            min-height: 70px; /* 固定最小高度，确保所有卡片高度一致 */
+        }
+        .match-row:hover {
+            background: #f8f9fa;
+            transform: translateX(3px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            z-index: 10; /* 悬停时提升层级 */
+        }
+        .match-row.win-row {
+            border-left-color: #28a745;
+            background: linear-gradient(90deg, rgba(40, 167, 69, 0.05) 0%, white 100%);
+        }
+        
+        /* 参与者各列样式 */
+        .col-player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 0 0 180px;
+            overflow: hidden;
+        }
+        .col-player-info > div {
+            flex: 1;
+            min-width: 0;
+        }
+        .col-champion {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            flex: 0 0 60px;
+        }
+        .col-kda {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* 垂直居中 */
+            min-width: 0;
+            flex: 0 0 90px;
+        }
+        .col-items-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 垂直居中 */
+            gap: 6px;
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+            min-height: 46px; /* 固定最小高度，容纳装备图标 */
+        }
+        
+        /* 头像和名字 */
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            flex-shrink: 0;
+        }
+        .profile-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-shrink: 0;
+        }
+        .player-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+        .player-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .player-link:hover {
+            color: #667eea;
+        }
+        .small-muted {
+            font-size: 11px;
+            color: #6c757d;
+        }
+        
+        /* KDA 样式 */
+        .kda-prominent {
+            font-weight: bold;
+            font-size: 15px;
+            color: #2c3e50; /* 默认深色，确保可读性 */
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* 添加白色阴影增强对比度 */
+        }
+        /* 详情视图中的KDA使用更明显的颜色 */
+        .match-details .kda-good { 
+            color: #1e8449;
+            font-weight: 900;
+        }
+        .match-details .kda-mid { 
+            color: #1f618d;
+            font-weight: 900;
+        }
+        .match-details .kda-bad { 
+            color: #c0392b;
+            font-weight: 900;
+        }
+        /* 主列表中的KDA颜色（原来的） */
+        .kda-good { color: #27ae60; }
+        .kda-mid { color: #3498db; }
+        .kda-bad { color: #e74c3c; }
+        
+        /* 物品和统计行 */
+        .items-row {
+            display: flex;
+            gap: 3px;
+            flex-wrap: nowrap; /* 不换行，保持在一行内 */
+            max-width: 100%;
+            overflow: hidden; /* 超出部分隐藏 */
+            align-items: center;
+            min-height: 34px; /* 固定高度容纳一行物品图标 */
+        }
+        .stats-row {
+            color: #6c757d;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+        
+        /* 英雄头像（详情中的） */
+        .champion-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        .champion-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .champion-wrapper .level-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            background: #2c3e50;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            border: 2px solid white;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        /* 详情容器宽度扩展 */
+        .detail-stats {
+            width: 100%;
+            max-width: none !important;
+        }
+        .detail-stats .card {
+            max-width: 100%;
+        }
+        .detail-stats .card-body {
+            padding: 20px;
+        }
+        .detail-stats .row {
+            margin: 0 -10px;
+        }
+        .detail-stats .col-md-6 {
+            padding: 0 10px;
+        }
+        
+        /* 下拉详情容器 - 关键修复：确保容器高度自适应 */
+        .match-details {
+            width: 100%;
+            overflow: visible !important;
+            min-height: auto;
+            height: auto !important;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .match-details .card {
+            width: 100%;
+            overflow: visible;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .match-details .card-body {
+            overflow: visible;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+        .match-details .row {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .match-details .col-md-6 {
+            flex: 0 0 calc(50% - 10px);
+            max-width: calc(50% - 10px);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .match-details h6 {
+            margin-bottom: 15px;
+            font-weight: bold;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* 分页样式 */
+        .pagination-btn {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background: #007bff;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .pagination-btn.active {
+            background: #007bff;
+            color: white;
+        }
+        .page-info {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-weight: 600;
+            color: #495057;
+        }
     </style>
 </head>
 <body>
 
-<a href="/" class="btn btn-primary back-button">
-    <i class="bi bi-arrow-left me-2"></i>返回主页
-</a>
-
 <div class="container">
-    <header class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-dark">
-            <i class="bi bi-person-circle me-2 text-primary"></i>{{ summoner_name }}
-        </h1>
-        <p class="lead text-muted">详细历史战绩</p>
-    </header>
+    <div class="header-card">
+        <div class="d-flex align-items-center">
+            <img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/{{ profile_icon_id }}.png" 
+                 class="summoner-icon me-4" 
+                 onerror="this.onerror=null;this.src='https://ddragon.leagueoflegends.com/cdn/15.21.1/img/profileicon/29.png';"
+                 alt="召唤师头像">
+            <div>
+                <h1 class="display-4 fw-bold text-dark mb-2">{{ summoner_name }}</h1>
+                <p class="lead text-muted mb-0">详细历史战绩分析</p>
+                {% if summoner_level > 0 %}
+                <span class="summoner-level-badge">等级 {{ summoner_level }}</span>
+                {% endif %}
+                {% if ranked_solo_tier %}
+                <span class="ranked-badge {{ ranked_solo_tier|lower }}">
+                    单排: {{ ranked_solo_tier }} {{ ranked_solo_rank }} - {{ ranked_solo_lp }} LP
+                </span>
+                {% endif %}
+                {% if ranked_flex_tier %}
+                <span class="ranked-badge {{ ranked_flex_tier|lower }}">
+                    灵活: {{ ranked_flex_tier }} {{ ranked_flex_rank }} - {{ ranked_flex_lp }} LP
+                </span>
+                {% endif %}
+            </div>
+            <a href="/" class="btn btn-outline-secondary ms-auto">返回首页</a>
+        </div>
+    </div>
 
     <div id="loading" class="text-center my-5">
         <div class="spinner-border text-primary" role="status">
@@ -142,6 +641,10 @@
 
     <div id="games-container">
         <!-- 游戏列表将由JavaScript填充 -->
+    </div>
+
+    <div id="pagination-container" class="d-flex justify-content-center mt-4" style="display: none;">
+        <!-- 分页控件将由JavaScript填充 -->
     </div>
 
     <div id="error-message" class="alert alert-danger d-none" role="alert">
@@ -166,19 +669,30 @@
         return ''+n;
     }
 
-    async function loadSummonerDetails() {
+    let currentPage = 1;
+    const gamesPerPage = 20;
+
+    async function loadSummonerDetails(page = 1) {
         const loadingDiv = document.getElementById('loading');
         const errorDiv = document.getElementById('error-message');
         const errorText = document.getElementById('error-text');
         const gamesContainer = document.getElementById('games-container');
         const summaryDiv = document.getElementById('stats-summary');
+        const paginationContainer = document.getElementById('pagination-container');
+
+        // 显示加载状态
+        loadingDiv.style.display = 'block';
+        errorDiv.classList.add('d-none');
+        gamesContainer.innerHTML = '';
+        summaryDiv.style.display = 'none';
+        paginationContainer.style.display = 'none';
 
         try {
             let historyUrl = '';
             if (summonerPuuid && summonerPuuid.length > 0) {
-                historyUrl = `/get_history?puuid=${encodeURIComponent(summonerPuuid)}`;
+                historyUrl = `/get_history?puuid=${encodeURIComponent(summonerPuuid)}&page=${page}`;
             } else {
-                historyUrl = `/get_history?name=${encodeURIComponent(summonerName)}`;
+                historyUrl = `/get_history?name=${encodeURIComponent(summonerName)}&page=${page}`;
             }
             const response = await fetch(historyUrl);
             const data = await response.json();
@@ -191,11 +705,16 @@
                 return;
             }
 
+            currentPage = page;
+
             // 显示统计摘要
             displayStatsSummary(data.games, summaryDiv);
             
             // 显示游戏列表
             displayGames(data.games, gamesContainer);
+
+            // 显示分页控件
+            displayPagination(data.games.length, paginationContainer);
 
         } catch (error) {
             console.error('加载战绩失败:', error);
@@ -203,6 +722,44 @@
             errorDiv.classList.remove('d-none');
             errorText.textContent = '网络错误，请稍后重试';
         }
+    }
+
+    function displayPagination(gamesCount, container) {
+        if (gamesCount === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        const hasPrev = currentPage > 1;
+        const hasNext = gamesCount >= gamesPerPage; // 如果当前页有20场游戏，可能还有下一页
+        
+        // 捕获当前页码值，避免闭包问题
+        const prevPage = currentPage - 1;
+        const nextPage = currentPage + 1;
+
+        container.innerHTML = `
+            <button class="pagination-btn" id="prev-page-btn" ${!hasPrev ? 'disabled' : ''}>
+                <i class="bi bi-chevron-left"></i> 上一页
+            </button>
+            <span class="page-info">第 ${currentPage} 页</span>
+            <button class="pagination-btn" id="next-page-btn" ${!hasNext ? 'disabled' : ''}>
+                下一页 <i class="bi bi-chevron-right"></i>
+            </button>
+        `;
+        container.style.display = 'flex';
+        
+        // 添加事件监听器 - 使用捕获的页码值
+        if (hasPrev) {
+            document.getElementById('prev-page-btn').addEventListener('click', () => loadPage(prevPage));
+        }
+        if (hasNext) {
+            document.getElementById('next-page-btn').addEventListener('click', () => loadPage(nextPage));
+        }
+    }
+
+    function loadPage(page) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        loadSummonerDetails(page);
     }
 
     function displayStatsSummary(games, container) {
@@ -226,36 +783,41 @@
 
         container.innerHTML = `
             <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card text-center shadow-sm">
+                <div class="summary-card text-center">
                     <div class="card-body">
+                        <i class="bi bi-controller fs-2 text-primary mb-2"></i>
                         <h6 class="text-muted">总场次</h6>
-                        <h3 class="mb-0">${totalGames}</h3>
+                        <h3 class="mb-0 fw-bold">${totalGames}</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card text-center shadow-sm">
+                <div class="summary-card text-center">
                     <div class="card-body">
+                        <i class="bi bi-trophy fs-2 ${winRate >= 50 ? 'text-success' : 'text-danger'} mb-2"></i>
                         <h6 class="text-muted">胜率</h6>
-                        <h3 class="mb-0 ${winRate >= 50 ? 'text-success' : 'text-danger'}">${winRate}%</h3>
+                        <h3 class="mb-0 fw-bold ${winRate >= 50 ? 'text-success' : 'text-danger'}">${winRate}%</h3>
                         <small class="text-muted">${wins}胜 ${losses}败</small>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card text-center shadow-sm">
+                <div class="summary-card text-center">
                     <div class="card-body">
+                        <i class="bi bi-graph-up fs-2 text-info mb-2"></i>
                         <h6 class="text-muted">平均KDA</h6>
-                        <h3 class="mb-0 text-info">${kdaRatio}</h3>
-                        <small class="text-muted">${avgKills} / ${avgDeaths} / ${avgAssists}</small>
+                        <h3 class="mb-0 fw-bold text-info">${avgKills}/${avgDeaths}/${avgAssists}</h3>
+                        <small class="text-muted">比值: ${kdaRatio}</small>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card text-center shadow-sm">
+                <div class="summary-card text-center">
                     <div class="card-body">
-                        <h6 class="text-muted">最常使用</h6>
-                        <h5 class="mb-0">${getMostPlayedChampion(games)}</h5>
+                        <i class="bi bi-star fs-2 text-warning mb-2"></i>
+                        <h6 class="text-muted">总击杀</h6>
+                        <h3 class="mb-0 fw-bold text-warning">${totalKills}</h3>
+                        <small class="text-muted">总助攻: ${totalAssists}</small>
                     </div>
                 </div>
             </div>
@@ -293,90 +855,116 @@
         window._games = games;
 
         container.innerHTML = games.map((game, index) => {
-            const isCherryMode = game.mode === 'CHERRY' || game.gameMode === 'CHERRY';
-            
-            // CHERRY 模式：使用排名判断胜负
-            let winClass, winText, winIcon;
-            if (isCherryMode) {
-                // 不再显示子队/排名，仅标识为斗魂竞技场并使用 win 字段判断胜负（如果可用）
-                winClass = game.win ? 'win-bg' : 'loss-bg';
-                winText = '斗魂竞技场';
-                winIcon = game.win ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
-            } else {
-                // 普通模式
-                winClass = game.win ? 'win-bg' : 'loss-bg';
-                winText = game.win ? '胜利' : '失败';
-                winIcon = game.win ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
+            const isCherryMode = game.mode === 'CHERRY' || game.gameMode === 'CHERRY' || game.mode === '斗魂竞技场';
+
+            // 计算全局游戏编号：当前页 * 每页数量 + 索引 + 1
+            const globalIndex = (currentPage - 1) * gamesPerPage + index + 1;
+
+            // 直接使用game对象的win字段（后端已处理好）
+            const won = game.win === true || game.win === 'true' || String(game.win).toLowerCase() === 'win';
+            const winClass = won ? 'win-bg' : 'loss-bg';
+            const winText = isCherryMode ? '斗魂竞技场' : (won ? '胜利' : '失败');
+            const winIcon = won ? 'trophy-fill text-success' : 'x-circle-fill text-danger';
+
+            // 解析KDA
+            let kills=0, deaths=0, assists=0;
+            if (game.kda && typeof game.kda === 'string' && game.kda.indexOf('/')>-1) {
+                [kills, deaths, assists] = game.kda.split('/').map(x=>parseInt(x)||0);
             }
-            
-            const [kills, deaths, assists] = game.kda.split('/');
-            const kda = deaths > 0 ? ((parseInt(kills) + parseInt(assists)) / parseInt(deaths)).toFixed(2) : 'Perfect';
-            
-            // OP.GG integration removed: no external badges
+            const kda = deaths > 0 ? (((kills||0) + (assists||0)) / (deaths||1)).toFixed(2) : 'Perfect';
+
+            // 英雄等级：后端简化数据没有champion_level，需要通过详细数据获取，暂时显示为空或从KDA推测
+            // 由于后端返回的简化列表没有等级信息，我们先不显示或显示"--"
+            const championLevel = game.champion_level || game.championLevel || game.level || '';
+
+            // 金币：后端已经是k单位（12表示12k），直接显示
+            const goldVal = game.gold || 0;
+            // 后端返回的gold已经是k为单位（例如12 = 12k），直接添加k后缀
+            let goldFormatted;
+            if (goldVal > 0 && goldVal < 1000) {
+                // 小于1000说明是k单位，直接加k
+                goldFormatted = goldVal + 'k';
+            } else if (goldVal >= 1000) {
+                // 大于等于1000说明是原始金币值，需要格式化
+                goldFormatted = fmt(goldVal);
+            } else {
+                goldFormatted = '0';
+            }
 
             return `
                 <div class="card game-card ${winClass}">
-                    <div class="card-body">
-                        <div class="row align-items-center">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center g-3">
                             <!-- 左侧：英雄信息 -->
-                            <div class="col-md-2 col-sm-3 text-center">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${game.champion_en}.png" 
-                                     alt="${game.champion_en}" 
-                                     class="champion-icon mb-2">
-                                <h6 class="mb-0">${game.champion_en}</h6>
-                                
+                            <div class="col-md-2 col-champion">
+                                <div class="champion-wrapper">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/${game.champion_en || ''}.png" 
+                                         alt="${game.champion_en || ''}" 
+                                         class="champion-icon">
+                                    ${championLevel ? `<div class="level-badge">${championLevel}</div>` : ''}
+                                </div>
+                                <h6 class="mt-2 mb-0 text-center fw-bold">${game.champion_en || ''}</h6>
                             </div>
 
                             <!-- 中间：战绩数据 -->
-                            <div class="col-md-6 col-sm-5">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-${winIcon} me-2 fs-5"></i>
-                                    <h5 class="mb-0 fw-bold">${winText}</h5>
-                                    <span class="badge ${isCherryMode ? 'bg-info' : ((game.gameMode === 'KIWI' || game.mode === 'KIWI') ? 'bg-purple' : 'bg-secondary')} ms-2">
+                            <div class="col-md-6 col-info">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="bi bi-${winIcon} me-2 fs-4"></i>
+                                    <h5 class="mb-0 fw-bold me-3">${winText}</h5>
+                                    <span class="badge mode-badge">
                                         ${getModeName(game.gameMode || game.mode)}
                                     </span>
                                 </div>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <span class="badge stats-badge bg-dark">
+                                
+                                <div class="mb-3 d-flex align-items-center flex-wrap gap-2">
+                                    <span class="kda-badge">
                                         <i class="bi bi-diagram-3 me-1"></i>
-                                        KDA: ${game.kda}
+                                        ${kills}/${deaths}/${assists}
                                     </span>
-                                    <span class="badge stats-badge ${kda >= 3 ? 'bg-success' : kda >= 2 ? 'bg-info' : 'bg-warning'}">
+                                    <span class="badge stats-badge ${kda >= 3 ? 'badge-ratio-high' : kda >= 2 ? 'badge-ratio-mid' : 'badge-ratio-low'}">
                                         <i class="bi bi-star-fill me-1"></i>
-                                        比值: ${kda}
+                                        ${kda}
                                     </span>
-                                    <span class="badge stats-badge bg-primary">
+                                </div>
+                                
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge stats-badge badge-gold">
                                         <i class="bi bi-coin me-1"></i>
-                                        ${game.gold} 金币
+                                        ${goldFormatted} 金币
                                     </span>
-                                    ${game.cs ? `<span class="badge stats-badge bg-info">
+                                    ${game.cs ? `<span class="badge stats-badge badge-cs">
                                         <i class="bi bi-bullseye me-1"></i>
                                         ${game.cs} CS
                                     </span>` : ''}
                                 </div>
                             </div>
 
-                            <!-- 右侧：时间和序号 -->
-                            <div class="col-md-4 col-sm-4 text-end">
-                                <small class="text-muted d-block mb-2">
-                                    <i class="bi bi-clock me-1"></i>${game.time_ago}
-                                </small>
-                                <span class="badge bg-light text-dark">第 ${index + 1} 场</span>
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleMatchDetails(${index})" type="button">
-                                        <i class="bi bi-chevron-down me-1"></i>展开对局
-                                    </button>
-                                    <a class="btn btn-sm btn-outline-secondary ms-2" 
-                                        href="/match/${encodeURIComponent(summonerName)}/${index}?match_id=${encodeURIComponent(game.match_id || '')}"
-                                        target="_blank" rel="noopener noreferrer">
-                                        <i class="bi bi-box-arrow-up-right me-1"></i>在新页打开
-                                    </a>
+                            <!-- 右侧：时间和操作 -->
+                            <div class="col-md-4 col-meta">
+                                <div class="text-end">
+                                    <div class="mb-2">
+                                        <i class="bi bi-clock me-1 text-muted"></i>
+                                        <span class="text-muted">${game.time_ago || ''}</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge bg-light text-dark px-3 py-1">第 ${globalIndex} 场</span>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary rounded-pill me-2" onclick="toggleMatchDetails(${index})" type="button">
+                                            <i class="bi bi-chevron-down me-1"></i>详情
+                                        </button>
+                                        <a class="btn btn-sm btn-outline-secondary rounded-pill" 
+                                            href="/match/${encodeURIComponent(summonerName)}/${index}?match_id=${encodeURIComponent(game.match_id || '')}"
+                                            target="_blank" rel="noopener noreferrer">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- inline details container (collapsed by default) -->
+                        <div id="match-details-${index}" class="match-details mt-3" style="display:none;"></div>
                     </div>
-                    <!-- inline details container (collapsed by default) -->
-                    <div id="match-details-${index}" class="collapse ps-3 pe-3 pb-3"></div>
                 </div>
             `;
         }).join('');
@@ -387,16 +975,15 @@
         const el = document.getElementById(detailsId);
         if (!el) return;
 
-        // If content already loaded, just toggle
+        // 如果已经加载过，直接切换显示
         if (el.dataset.loaded === 'true') {
-            // bootstrap collapse toggle
-            const bsCollapse = new bootstrap.Collapse(el, {toggle: true});
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
             return;
         }
 
-        // show spinner while loading
+        // 显示加载动画
+        el.style.display = 'block';
         el.innerHTML = `<div class="text-center py-3"><div class="spinner-border" role="status"><span class="visually-hidden">加载中...</span></div></div>`;
-        const bs = new bootstrap.Collapse(el, {toggle: true});
 
         try {
             const games = window._games || [];
@@ -515,7 +1102,7 @@
                 <div class="col-champion">${champWrapper}</div>
                 <div class="col-kda">
                     <span class="kda-prominent ${kdaClass}">${k}/${d}/${a}</span>
-                    <div class="small-muted">${ratioStr} KDA</div>
+                    <div class="small-muted" style="color: #495057; font-weight: 600;">${ratioStr} KDA</div>
                 </div>
                 <div class="col-items-wrapper">
                     <div class="items-row">${itemsHtml}</div>
@@ -656,7 +1243,7 @@
     }
 
     // 页面加载时执行
-    document.addEventListener('DOMContentLoaded', loadSummonerDetails);
+    document.addEventListener('DOMContentLoaded', () => loadSummonerDetails());
 </script>
 
 </body>
